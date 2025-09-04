@@ -4,6 +4,7 @@ export { instancesRepo } from './instancesRepo';
 export { tasksRepo } from './tasksRepo';
 export { approvalsRepo } from './approvalsRepo';
 export { rolesRepo } from './rolesRepo';
+export { reportsRepo } from './reportsRepo';
 export { seedUtil } from './seedUtil';
 
 // Re-export types for convenience
