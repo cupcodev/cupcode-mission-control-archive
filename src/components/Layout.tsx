@@ -16,9 +16,15 @@ const getPageTitle = (pathname: string): string => {
   };
 
   // Handle dynamic routes like /app/projects/:id/board
-  if (pathname.includes('/board')) {
+  if (pathname.includes('/projects/') && pathname.includes('/board')) {
     const projectId = pathname.split('/')[3];
     return `Board do Projeto ${projectId}`;
+  }
+  
+  // Handle workflow instance board routes like /app/workflows/instances/:id/board
+  if (pathname.includes('/workflows/instances/') && pathname.includes('/board')) {
+    const instanceId = pathname.split('/')[4];
+    return `Board da Instância`;
   }
 
   return routes[pathname] || 'Mission Control';

@@ -13,6 +13,7 @@ import { Workflows } from "./pages/Workflows";
 import { WorkflowTemplates } from "./pages/WorkflowTemplates";
 import { WorkflowTemplateNew } from "./pages/WorkflowTemplateNew";
 import { WorkflowExecutions } from "./pages/WorkflowExecutions";
+import { WorkflowInstanceBoard } from "./pages/WorkflowInstanceBoard";
 import { Approvals } from "./pages/Approvals";
 import { Reports } from "./pages/Reports";
 import { Settings } from "./pages/Settings";
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="projects/:id/board" element={<ProjectBoard />} />
             <Route path="approvals" element={<Approvals />} />
             <Route path="workflows/instances" element={<WorkflowExecutions />} />
+            <Route path="workflows/instances/:id/board" element={<WorkflowInstanceBoard />} />
             <Route path="clients" element={<Clients />} />
             
             {/* Admin+ restricted routes */}

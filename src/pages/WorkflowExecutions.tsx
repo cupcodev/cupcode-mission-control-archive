@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Eye, Pause, Play, X } from 'lucide-react';
+import { Plus, Search, Eye, Pause, Play, X, Kanban } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,7 @@ export const WorkflowExecutions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewInstanceDialog, setShowNewInstanceDialog] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const loadInstances = async () => {
     try {
@@ -161,6 +163,10 @@ export const WorkflowExecutions = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/app/workflows/instances/${instance.id}/board`)}>
+                            <Kanban className="h-4 w-4 mr-2" />
+                            Abrir Board
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleAction(instance.id, 'ver')}>
                             <Eye className="h-4 w-4 mr-2" />
                             Ver detalhes
