@@ -26,6 +26,7 @@ import { AuditLog } from "./pages/AuditLog";
 import { Clients } from "./pages/Clients";
 import { Profile } from "./pages/Profile";
 import { EditProfile } from "./pages/EditProfile";
+import { Calendar } from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 
 // Components
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="tasks/:id" element={<TaskDetail />} />
             <Route path="clients" element={<Clients />} />
             <Route path="clients/:clientId" element={<Clients />} />
+            <Route path="calendar" element={<Calendar />} />
             <Route path="profile" element={<Profile />} />
             <Route path="profile/edit" element={<EditProfile />} />
             

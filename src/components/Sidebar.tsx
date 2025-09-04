@@ -13,7 +13,7 @@ import {
   Plug,
   Shield,
   UserCheck,
-  FileText
+  Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,11 @@ const navigation: NavItem[] = [
     name: 'Clientes',
     href: '/app/clients',
     icon: UserCheck,
+  },
+  {
+    name: 'Calendário',
+    href: '/app/calendar',
+    icon: Calendar,
   },
   {
     name: 'Aprovações',

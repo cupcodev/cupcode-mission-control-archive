@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, TrendingUp, Users, FolderKanban, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Mock data para a overview
 const mockStats = {
@@ -22,6 +23,28 @@ const mockRecentActivity = [
 ];
 
 export const Overview = () => {
+  const navigate = useNavigate();
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'new-project':
+        navigate('/app/projects');
+        break;
+      case 'approvals':
+        navigate('/app/approvals');
+        break;
+      case 'reports':
+        navigate('/app/reports');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleProjectClick = (projectId: string) => {
+    navigate(`/app/projects/${projectId}/board`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -87,7 +110,11 @@ export const Overview = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {mockRecentProjects.map((project) => (
-              <div key={project.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+              <div 
+                key={project.id} 
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => handleProjectClick(project.id)}
+              >
                 <div className="flex-1">
                   <h4 className="font-medium">{project.name}</h4>
                   <div className="flex items-center space-x-2 mt-1">
@@ -152,15 +179,24 @@ export const Overview = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-background/50 rounded-lg border cursor-pointer hover:bg-background/70 transition-colors">
+            <div 
+              className="p-4 bg-background/50 rounded-lg border cursor-pointer hover:bg-background/70 transition-colors"
+              onClick={() => handleQuickAction('new-project')}
+            >
               <h4 className="font-medium mb-2">Criar Projeto</h4>
               <p className="text-sm text-muted-foreground">Inicie um novo projeto no Mission Control</p>
             </div>
-            <div className="p-4 bg-background/50 rounded-lg border cursor-pointer hover:bg-background/70 transition-colors">
+            <div 
+              className="p-4 bg-background/50 rounded-lg border cursor-pointer hover:bg-background/70 transition-colors"
+              onClick={() => handleQuickAction('approvals')}
+            >
               <h4 className="font-medium mb-2">Revisar Aprovações</h4>
               <p className="text-sm text-muted-foreground">8 aprovações aguardando sua decisão</p>
             </div>
-            <div className="p-4 bg-background/50 rounded-lg border cursor-pointer hover:bg-background/70 transition-colors">
+            <div 
+              className="p-4 bg-background/50 rounded-lg border cursor-pointer hover:bg-background/70 transition-colors"
+              onClick={() => handleQuickAction('reports')}
+            >
               <h4 className="font-medium mb-2">Ver Relatórios</h4>
               <p className="text-sm text-muted-foreground">Acompanhe métricas e performance</p>
             </div>
