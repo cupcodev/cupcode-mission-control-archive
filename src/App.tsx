@@ -9,6 +9,7 @@ import { Login } from "./pages/Login";
 import { Overview } from "./pages/Overview";
 import { Projects } from "./pages/Projects";
 import { ProjectBoard } from "./pages/ProjectBoard";
+import { ProjectNew } from "./pages/ProjectNew";
 import { Workflows } from "./pages/Workflows";
 import { WorkflowTemplates } from "./pages/WorkflowTemplates";
 import { WorkflowTemplateNew } from "./pages/WorkflowTemplateNew";
@@ -62,6 +63,7 @@ const App = () => (
             {/* Routes accessible to all authenticated users */}
             <Route path="overview" element={<Overview />} />
             <Route path="projects" element={<Projects />} />
+            <Route path="projects/new" element={<ProjectNew />} />
             <Route path="projects/:id/board" element={<ProjectBoard />} />
             <Route path="approvals" element={<Approvals />} />
             <Route path="workflows/instances" element={<WorkflowExecutions />} />

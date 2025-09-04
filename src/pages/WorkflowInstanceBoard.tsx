@@ -87,7 +87,7 @@ export const WorkflowInstanceBoard = () => {
         </div>
       </div>
 
-      <KanbanBoard instanceId={id} />
+      <KanbanBoard instanceId={id} templateId={instance.template_id} />
     </div>
   );
 };

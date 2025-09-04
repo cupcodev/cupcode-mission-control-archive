@@ -10,9 +10,13 @@ import { BoardFilters } from './BoardFilters';
 import { BoardToolbar } from './BoardToolbar';
 import { EmptyState } from './EmptyState';
 import { TaskDrawer } from './TaskDrawer';
+import { TaskCreateDialog } from './TaskCreateDialog';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface KanbanBoardProps {
   instanceId: string;
+  templateId?: string;
 }
 
 type TaskStatus = 'open' | 'in_progress' | 'blocked' | 'done';
@@ -46,7 +50,7 @@ interface BoardFiltersType {
   myTasksOnly: boolean;
 }
 
-export const KanbanBoard = ({ instanceId }: KanbanBoardProps) => {
+export const KanbanBoard = ({ instanceId, templateId }: KanbanBoardProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +58,7 @@ export const KanbanBoard = ({ instanceId }: KanbanBoardProps) => {
   const [sortBy, setSortBy] = useState<'priority' | 'due_date' | 'created_at'>('priority');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     search: '',
     statuses: [...COLUMN_STATUSES],
@@ -281,6 +286,15 @@ export const KanbanBoard = ({ instanceId }: KanbanBoardProps) => {
     setSelectedTaskId(null);
   };
 
+  const handleTaskCreated = (newTask: Task) => {
+    // Optimistically add the new task to the appropriate column
+    setTasks(prevTasks => [...prevTasks, newTask]);
+    
+    // Open the task detail
+    setSelectedTaskId(newTask.id);
+    setIsDrawerOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -295,7 +309,13 @@ export const KanbanBoard = ({ instanceId }: KanbanBoardProps) => {
 
   return (
     <div className="space-y-6">
-      <BoardToolbar totalCount={getTotalCount()} />
+      <div className="flex items-center justify-between">
+        <BoardToolbar totalCount={getTotalCount()} />
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Tarefa
+        </Button>
+      </div>
       
       <BoardFilters
         filters={filters}
@@ -336,10 +356,18 @@ export const KanbanBoard = ({ instanceId }: KanbanBoardProps) => {
         </DragOverlay>
       </DndContext>
 
-      <TaskDrawer 
+      <TaskDrawer
         taskId={selectedTaskId}
         isOpen={isDrawerOpen}
         onClose={handleCloseDrawer}
+      />
+
+      <TaskCreateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        instanceId={instanceId}
+        templateId={templateId}
+        onSuccess={handleTaskCreated}
       />
     </div>
   );
