@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { tasksRepo, type Task } from '@/data/mc';
+import { toast } from 'sonner';
 
 interface TaskCardProps {
   task: Task;
@@ -17,8 +18,8 @@ interface TaskCardProps {
 }
 
 export const TaskCard = ({ task, isDragging = false, canMove }: TaskCardProps) => {
-  const { toast } = useToast();
   const { user, profile } = useAuth();
+  const userRole = profile?.role;
   
   const {
     attributes,
@@ -122,17 +123,10 @@ export const TaskCard = ({ task, isDragging = false, canMove }: TaskCardProps) =
 
     try {
       await tasksRepo.update(task.id, { assignee_user_id: user.id });
-      toast({
-        title: 'Tarefa atribuída',
-        description: 'A tarefa foi atribuída para você.',
-      });
+      toast.success('Tarefa atribuída para você');
     } catch (error) {
       console.error('Erro ao atribuir tarefa:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível atribuir a tarefa. Verifique suas permissões.',
-        variant: 'destructive',
-      });
+      toast.error('Não foi possível atribuir a tarefa. Verifique suas permissões.');
     }
   };
 
@@ -143,17 +137,27 @@ export const TaskCard = ({ task, isDragging = false, canMove }: TaskCardProps) =
         started_at: newStatus === 'in_progress' && !task.started_at ? new Date().toISOString() : task.started_at,
         completed_at: newStatus === 'done' ? new Date().toISOString() : undefined
       });
-      toast({
-        title: 'Status atualizado',
-        description: `Tarefa movida para "${newStatus}".`,
-      });
+      toast.success(`Status atualizado para "${newStatus}"`);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível atualizar o status da tarefa.',
-        variant: 'destructive',
-      });
+      toast.error('Não foi possível atualizar o status da tarefa.');
+    }
+  };
+
+  const handleAutoAssign = async () => {
+    const { assignmentService } = await import('@/lib/assignment-service');
+    
+    try {
+      const result = await assignmentService.assignTaskByRole(task.id);
+      if (result.success) {
+        toast.success('Tarefa atribuída automaticamente');
+        // Trigger refresh if there's a callback
+        window.location.reload();
+      } else {
+        toast.error(result.error || 'Erro ao atribuir tarefa');
+      }
+    } catch (error: any) {
+      toast.error('Erro ao atribuir tarefa: ' + error.message);
     }
   };
 
@@ -199,27 +203,36 @@ export const TaskCard = ({ task, isDragging = false, canMove }: TaskCardProps) =
                 Abrir detalhes
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleStatusChange('open')}>
-                Mover para Aberto
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusChange('in_progress')}>
-                Mover para Em Progresso
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusChange('blocked')}>
-                Mover para Bloqueado
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusChange('done')}>
-                Mover para Concluído
-              </DropdownMenuItem>
-              {canAssignToMe() && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleAssignToMe}>
-                    <User className="h-4 w-4 mr-2" />
-                    Atribuir para mim
-                  </DropdownMenuItem>
-                </>
-              )}
+                <DropdownMenuItem onClick={() => handleStatusChange('open')}>
+                  Mover para Aberto
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('in_progress')}>
+                  Mover para Em Progresso
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('blocked')}>
+                  Mover para Bloqueado
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusChange('done')}>
+                  Mover para Concluído
+                </DropdownMenuItem>
+                {canAssignToMe() && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleAssignToMe}>
+                      <User className="h-4 w-4 mr-2" />
+                      Atribuir para mim
+                    </DropdownMenuItem>
+                  </>
+                )}
+                
+                {(userRole === 'admin' || userRole === 'superadmin') && task.assigned_role && !task.assignee_user_id && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleAutoAssign}>
+                      Atribuir automaticamente ({task.assigned_role})
+                    </DropdownMenuItem>
+                  </>
+                )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

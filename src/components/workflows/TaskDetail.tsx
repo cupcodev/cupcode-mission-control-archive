@@ -41,11 +41,12 @@ interface ChecklistItem {
   updated_at: string;
 }
 
-export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose }: TaskDetailProps) => {
+export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUpdate }: TaskDetailProps & { onUpdate?: () => void }) => {
   const { id: paramTaskId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile } = useAuth();
+  const userRole = profile?.role;
 
   const taskId = propTaskId || paramTaskId;
   
@@ -215,11 +216,46 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose }: Ta
         title: 'Tarefa atribuída',
         description: 'A tarefa foi atribuída para você.',
       });
+      onUpdate?.();
     } catch (error) {
       console.error('Erro ao atribuir tarefa:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível atribuir a tarefa.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAutoAssign = async () => {
+    const { assignmentService } = await import('@/lib/assignment-service');
+    
+    try {
+      setSaving(true);
+      const result = await assignmentService.assignTaskByRole(task.id);
+      if (result.success) {
+        // Find the assigned user and update the task
+        if (result.assigned) {
+          setTask({ ...task, assignee_user_id: result.assigned });
+        }
+        toast({
+          title: 'Tarefa atribuída automaticamente',
+          description: 'A tarefa foi atribuída automaticamente baseada na função.',
+        });
+        onUpdate?.();
+      } else {
+        toast({
+          title: 'Erro na atribuição automática',
+          description: result.error || 'Não foi possível atribuir a tarefa automaticamente.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: 'Erro ao atribuir tarefa: ' + error.message,
         variant: 'destructive',
       });
     } finally {

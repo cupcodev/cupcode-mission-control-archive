@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Eye, Pause, Play, X, Kanban } from 'lucide-react';
+import { Plus, Search, Eye, Pause, Play, X, Kanban, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { instancesRepo, type WorkflowInstance } from '@/data/mc';
 import { InstanceStartDialog } from '@/components/workflows/InstanceStartDialog';
 
@@ -17,6 +18,7 @@ export const WorkflowExecutions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewInstanceDialog, setShowNewInstanceDialog] = useState(false);
   const { toast } = useToast();
+  const { profile } = useAuth();
   const navigate = useNavigate();
 
   const loadInstances = async () => {
@@ -167,6 +169,12 @@ export const WorkflowExecutions = () => {
                             <Kanban className="h-4 w-4 mr-2" />
                             Abrir Board
                           </DropdownMenuItem>
+                          {(profile?.role === 'admin' || profile?.role === 'superadmin') && (
+                            <DropdownMenuItem onClick={() => console.log('Bulk assign', instance.id)}>
+                              <Users className="h-4 w-4 mr-2" />
+                              Atribuir todas não atribuídas
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => handleAction(instance.id, 'ver')}>
                             <Eye className="h-4 w-4 mr-2" />
                             Ver detalhes
