@@ -11,15 +11,21 @@ import { Projects } from "./pages/Projects";
 import { ProjectBoard } from "./pages/ProjectBoard";
 import { Workflows } from "./pages/Workflows";
 import { WorkflowTemplates } from "./pages/WorkflowTemplates";
+import { WorkflowTemplateNew } from "./pages/WorkflowTemplateNew";
 import { WorkflowExecutions } from "./pages/WorkflowExecutions";
 import { Approvals } from "./pages/Approvals";
 import { Reports } from "./pages/Reports";
 import { Settings } from "./pages/Settings";
+import { Team } from "./pages/Team";
+import { Integrations } from "./pages/Integrations";
+import { AuditLog } from "./pages/AuditLog";
+import { Clients } from "./pages/Clients";
 import NotFound from "./pages/NotFound";
 
 // Components
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { RequireRole } from "./components/RequireRole";
 
 const queryClient = new QueryClient();
 
@@ -45,15 +51,74 @@ const App = () => (
               </ProtectedRoute>
             }
           >
+            {/* Routes accessible to all authenticated users */}
             <Route path="overview" element={<Overview />} />
             <Route path="projects" element={<Projects />} />
             <Route path="projects/:id/board" element={<ProjectBoard />} />
-            <Route path="workflows" element={<Workflows />} />
-            <Route path="workflows/templates" element={<WorkflowTemplates />} />
-            <Route path="workflows/executions" element={<WorkflowExecutions />} />
             <Route path="approvals" element={<Approvals />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="settings" element={<Settings />} />
+            <Route path="workflows/instances" element={<WorkflowExecutions />} />
+            <Route path="clients" element={<Clients />} />
+            
+            {/* Admin+ restricted routes */}
+            <Route 
+              path="workflows/templates" 
+              element={
+                <RequireRole minRole="admin">
+                  <WorkflowTemplates />
+                </RequireRole>
+              } 
+            />
+            <Route 
+              path="workflows/templates/new" 
+              element={
+                <RequireRole minRole="admin">
+                  <WorkflowTemplateNew />
+                </RequireRole>
+              } 
+            />
+            <Route 
+              path="team" 
+              element={
+                <RequireRole minRole="admin">
+                  <Team />
+                </RequireRole>
+              } 
+            />
+            <Route 
+              path="reports" 
+              element={
+                <RequireRole minRole="admin">
+                  <Reports />
+                </RequireRole>
+              } 
+            />
+            <Route 
+              path="settings" 
+              element={
+                <RequireRole minRole="admin">
+                  <Settings />
+                </RequireRole>
+              } 
+            />
+            <Route 
+              path="integrations" 
+              element={
+                <RequireRole minRole="admin">
+                  <Integrations />
+                </RequireRole>
+              } 
+            />
+            <Route 
+              path="audit-log" 
+              element={
+                <RequireRole minRole="admin">
+                  <AuditLog />
+                </RequireRole>
+              } 
+            />
+            
+            {/* Legacy route for backwards compatibility */}
+            <Route path="workflows" element={<Workflows />} />
           </Route>
           
           {/* Catch-all route */}

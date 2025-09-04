@@ -8,12 +8,32 @@ import {
   BarChart3, 
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Users,
+  Plug,
+  Shield,
+  UserCheck,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  adminOnly?: boolean;
+  submenu?: Array<{
+    name: string;
+    href: string;
+    adminOnly?: boolean;
+  }>;
+}
+
+const navigation: NavItem[] = [
   {
     name: 'Overview',
     href: '/app/overview',
@@ -25,34 +45,64 @@ const navigation = [
     icon: FolderKanban,
   },
   {
-    name: 'Workflows',
-    href: '/app/workflows',
-    icon: GitBranch,
-    submenu: [
-      { name: 'Templates', href: '/app/workflows/templates' },
-      { name: 'Execuções', href: '/app/workflows/executions' },
-    ]
+    name: 'Clientes',
+    href: '/app/clients',
+    icon: UserCheck,
   },
   {
     name: 'Aprovações',
     href: '/app/approvals',
     icon: CheckSquare,
+    badge: '3',
+  },
+  {
+    name: 'Workflows',
+    href: '/app/workflows',
+    icon: GitBranch,
+    submenu: [
+      { name: 'Templates', href: '/app/workflows/templates', adminOnly: true },
+      { name: 'Execuções', href: '/app/workflows/instances' },
+    ]
+  },
+  {
+    name: 'Equipe',
+    href: '/app/team',
+    icon: Users,
+    adminOnly: true,
   },
   {
     name: 'Relatórios',
     href: '/app/reports',
     icon: BarChart3,
+    adminOnly: true,
+  },
+  {
+    name: 'Integrações',
+    href: '/app/integrations',
+    icon: Plug,
+    adminOnly: true,
   },
   {
     name: 'Configurações',
     href: '/app/settings',
     icon: Settings,
+    adminOnly: true,
+  },
+  {
+    name: 'Log de Auditoria',
+    href: '/app/audit-log',
+    icon: Shield,
+    adminOnly: true,
   },
 ];
 
 export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { profile } = useAuth();
+
+  const userRole = profile?.role || 'user';
+  const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
   const isActive = (href: string) => {
     if (href === '/app/overview') {
@@ -60,6 +110,8 @@ export const Sidebar = () => {
     }
     return location.pathname.startsWith(href);
   };
+
+  const filteredNavigation = navigation.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <div
@@ -93,7 +145,7 @@ export const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="px-2 py-4 space-y-1">
-        {navigation.map((item) => (
+        {filteredNavigation.map((item) => (
           <div key={item.name}>
             <NavLink
               to={item.href}
@@ -109,19 +161,35 @@ export const Sidebar = () => {
               }
             >
               <item.icon className={cn('h-5 w-5', !collapsed && 'mr-3')} />
-              {!collapsed && <span>{item.name}</span>}
+              {!collapsed && (
+                <>
+                  <span className="flex-1">{item.name}</span>
+                  {item.adminOnly && (
+                    <Badge variant="outline" className="text-xs ml-1">
+                      Admin
+                    </Badge>
+                  )}
+                  {item.badge && !item.adminOnly && (
+                    <Badge variant="secondary" className="text-xs ml-1">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </>
+              )}
             </NavLink>
             
             {/* Submenu */}
             {item.submenu && !collapsed && isActive(item.href) && (
               <div className="ml-6 mt-1 space-y-1">
-                {item.submenu.map((subItem) => (
+                {item.submenu
+                  .filter(subItem => !subItem.adminOnly || isAdmin)
+                  .map((subItem) => (
                   <NavLink
                     key={subItem.name}
                     to={subItem.href}
                     className={({ isActive }) =>
                       cn(
-                        'block px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                        'flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors',
                         'hover:bg-muted/50',
                         isActive
                           ? 'text-primary bg-primary/5'
@@ -129,7 +197,12 @@ export const Sidebar = () => {
                       )
                     }
                   >
-                    {subItem.name}
+                    <span className="flex-1">{subItem.name}</span>
+                    {subItem.adminOnly && (
+                      <Badge variant="outline" className="text-xs ml-1">
+                        Admin
+                      </Badge>
+                    )}
                   </NavLink>
                 ))}
               </div>
