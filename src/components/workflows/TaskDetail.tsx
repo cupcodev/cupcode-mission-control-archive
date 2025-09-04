@@ -23,7 +23,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { tasksRepo, type Task, type Comment, type ActivityLog } from '@/data/mc';
+import { tasksRepo, approvalsRepo, type Task, type Comment, type ActivityLog, type Approval } from '@/data/mc';
+import { ApprovalDecisionDialog } from './ApprovalDecisionDialog';
 import { cn } from '@/lib/utils';
 
 interface TaskDetailProps {
@@ -69,6 +70,10 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose }: Ta
   // Block state
   const [isBlocking, setIsBlocking] = useState(false);
   const [blockReason, setBlockReason] = useState('');
+  
+  // Approval state
+  const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
 
   const canEdit = () => {
     if (!user || !profile) return false;
@@ -96,6 +101,16 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose }: Ta
         tasksRepo.get(taskId),
         tasksRepo.getComments(taskId)
       ]);
+      
+      // Load approvals if this is an approval task
+      if (taskData?.type === 'approval') {
+        try {
+          const approvalsData = await approvalsRepo.listByTask(taskId);
+          setApprovals(approvalsData);
+        } catch (error) {
+          console.error('Error loading approvals:', error);
+        }
+      }
       
       if (!taskData) {
         toast({
@@ -682,6 +697,17 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose }: Ta
               </Button>
             )}
             
+            {task.type === 'approval' && canEdit() && (
+              <Button 
+                onClick={() => setShowApprovalDialog(true)} 
+                disabled={saving} 
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                <CheckSquare className="h-4 w-4 mr-2" />
+                Tomar decisão
+              </Button>
+            )}
+            
             {task.status === 'blocked' ? (
               <Button onClick={handleUnblockTask} disabled={saving} className="w-full" variant="outline">
                 <AlertTriangle className="h-4 w-4 mr-2" />
@@ -739,6 +765,83 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose }: Ta
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">{task.fields.block_reason}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Approval Section */}
+      {task.type === 'approval' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CheckSquare className="h-5 w-5" />
+              Histórico de Aprovações
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {approvals.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
+                Nenhuma decisão tomada ainda
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {approvals.map((approval) => (
+                  <div key={approval.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {approval.decision === 'approved' && <CheckSquare className="h-4 w-4 text-green-600" />}
+                        {approval.decision === 'changes_requested' && <AlertTriangle className="h-4 w-4 text-yellow-600" />}
+                        {approval.decision === 'rejected' && <X className="h-4 w-4 text-red-600" />}
+                        <span className="font-medium">
+                          {approval.decision === 'approved' && 'Aprovado'}
+                          {approval.decision === 'changes_requested' && 'Mudanças Solicitadas'}
+                          {approval.decision === 'rejected' && 'Rejeitado'}
+                        </span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {format(new Date(approval.decided_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </span>
+                    </div>
+                    
+                    {approval.reason && (
+                      <div className="text-sm text-muted-foreground">
+                        <strong>Motivo:</strong> {approval.reason}
+                      </div>
+                    )}
+                    
+                    {approval.artifacts && approval.artifacts.length > 0 && (
+                      <div className="text-sm">
+                        <strong>Evidências:</strong>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {approval.artifacts.map((artifact: any, index: number) => (
+                            <a
+                              key={index}
+                              href={artifact.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              {artifact.name || artifact.url}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {canEdit() && (
+              <Button 
+                onClick={() => setShowApprovalDialog(true)}
+                className="w-full mt-4"
+              >
+                <CheckSquare className="h-4 w-4 mr-2" />
+                Nova Decisão
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
@@ -992,13 +1095,32 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose }: Ta
     </div>
   );
 
+  const wrappedContent = (
+    <div>
+      {content}
+      
+      {/* Approval Decision Dialog */}
+      {task && showApprovalDialog && (
+        <ApprovalDecisionDialog
+          task={task}
+          isOpen={showApprovalDialog}
+          onClose={() => setShowApprovalDialog(false)}
+          onDecisionMade={() => {
+            setShowApprovalDialog(false);
+            loadTaskData(); // Reload all data including approvals
+          }}
+        />
+      )}
+    </div>
+  );
+
   if (isDrawer) {
-    return content;
+    return wrappedContent;
   }
 
   return (
     <div className="container mx-auto py-6 max-w-4xl">
-      {content}
+      {wrappedContent}
     </div>
   );
 };

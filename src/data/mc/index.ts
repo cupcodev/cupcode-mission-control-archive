@@ -2,6 +2,7 @@
 export { templatesRepo } from './templatesRepo';
 export { instancesRepo } from './instancesRepo';
 export { tasksRepo } from './tasksRepo';
+export { approvalsRepo } from './approvalsRepo';
 export { seedUtil } from './seedUtil';
 
 // Re-export types for convenience
