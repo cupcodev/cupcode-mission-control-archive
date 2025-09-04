@@ -1,35 +1,55 @@
+import { supabase } from '@/integrations/supabase/client';
 import type { Approval } from '@/types/mc';
-
-// Mock data for now - will connect to Supabase later
-const mockApprovals: Approval[] = [
-  {
-    id: '1',
-    task_id: 'task-1',
-    approver_user_id: 'user-1',
-    decision: 'approved',
-    reason: 'Looks good to proceed',
-    artifacts: [],
-    decided_at: '2024-01-15T10:30:00Z'
-  }
-];
 
 export const approvalsRepo = {
   async create(approval: Omit<Approval, 'id' | 'decided_at'>): Promise<Approval> {
-    const newApproval: Approval = {
-      ...approval,
-      id: `approval-${Date.now()}`,
-      decided_at: new Date().toISOString()
-    };
-    
-    mockApprovals.push(newApproval);
-    return newApproval;
+    try {
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('approvals')
+        .insert(approval)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Approvals repository error:', error);
+      throw error;
+    }
   },
 
   async listByTask(taskId: string): Promise<Approval[]> {
-    return mockApprovals.filter(approval => approval.task_id === taskId);
+    try {
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('approvals')
+        .select('*')
+        .eq('task_id', taskId)
+        .order('decided_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Approvals repository error:', error);
+      throw error;
+    }
   },
 
   async get(id: string): Promise<Approval | null> {
-    return mockApprovals.find(approval => approval.id === id) || null;
+    try {
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('approvals')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Approvals repository error:', error);
+      return null;
+    }
   }
 };

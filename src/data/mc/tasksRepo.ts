@@ -4,60 +4,15 @@ import type { Task, CreateTaskInput, UpdateTaskInput, Comment } from '@/types/mc
 class TasksRepository {
   async listByInstance(instanceId: string): Promise<Task[]> {
     try {
-      // Return mock tasks for now
-      return [
-        {
-          id: 'task-1',
-          workflow_instance_id: instanceId,
-          node_id: 'start',
-          type: 'form',
-          title: 'Coletar insumos do projeto',
-          status: 'open',
-          priority: 2,
-          assigned_role: 'CS',
-          assignee_user_id: 'current-user',
-          sla_hours: 24,
-          fields: {
-            form_url: 'https://forms.example.com/requirements',
-            client_contact: 'cliente@exemplo.com'
-          },
-          created_by: 'current-user',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'task-2',
-          workflow_instance_id: instanceId,
-          node_id: 'ux_brief',
-          type: 'task',
-          title: 'Briefing UX/Wireframes',
-          status: 'open',
-          priority: 3,
-          assigned_role: 'Designer',
-          sla_hours: 72,
-          fields: {
-            figma_url: '',
-            wireframes_ready: false
-          },
-          created_by: 'current-user',
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'task-3',
-          workflow_instance_id: instanceId,
-          node_id: 'front_impl',
-          type: 'task',
-          title: 'Implementação Front-end',
-          status: 'open',
-          priority: 4,
-          assigned_role: 'FrontEnd',
-          fields: {
-            repo_url: 'https://github.com/cupcode/projeto-exemplo',
-            tech_stack: 'React + TypeScript + Tailwind'
-          },
-          created_by: 'current-user',
-          created_at: new Date().toISOString()
-        }
-      ];
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('tasks')
+        .select('*')
+        .eq('workflow_instance_id', instanceId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error('Tasks repository error:', error);
       throw error;
@@ -66,36 +21,37 @@ class TasksRepository {
 
   async get(id: string): Promise<Task | null> {
     try {
-      const tasks = await this.listByInstance('instance-1');
-      return tasks.find(t => t.id === id) || null;
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('tasks')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Tasks repository error:', error);
-      throw error;
+      return null;
     }
   }
 
   async create(task: CreateTaskInput): Promise<Task> {
     try {
-      console.log('Creating task (simulated):', task);
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('tasks')
+        .insert({
+          ...task,
+          status: task.status || 'open',
+          priority: task.priority || 1,
+          fields: task.fields || {}
+        })
+        .select()
+        .single();
 
-      const newTask: Task = {
-        id: `task-${Date.now()}`,
-        workflow_instance_id: task.workflow_instance_id,
-        node_id: task.node_id,
-        type: task.type,
-        title: task.title,
-        status: task.status || 'open',
-        priority: task.priority || 3,
-        assigned_role: task.assigned_role,
-        assignee_user_id: task.assignee_user_id,
-        due_at: task.due_at,
-        sla_hours: task.sla_hours,
-        fields: task.fields || {},
-        created_by: 'current-user',
-        created_at: new Date().toISOString()
-      };
-
-      return newTask;
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Tasks repository error:', error);
       throw error;
@@ -104,17 +60,25 @@ class TasksRepository {
 
   async update(id: string, updates: UpdateTaskInput): Promise<Task> {
     try {
-      console.log('Updating task (simulated):', { id, updates });
-
-      const existing = await this.get(id);
-      if (!existing) {
-        throw new Error('Tarefa não encontrada');
+      // Handle status transitions
+      const updateData = { ...updates };
+      if (updates.status === 'in_progress' && !updates.started_at) {
+        updateData.started_at = new Date().toISOString();
+      }
+      if ((updates.status === 'done' || updates.status === 'rejected') && !updates.completed_at) {
+        updateData.completed_at = new Date().toISOString();
       }
 
-      return {
-        ...existing,
-        ...updates
-      };
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('tasks')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Tasks repository error:', error);
       throw error;
@@ -123,18 +87,19 @@ class TasksRepository {
 
   async addComment(taskId: string, body: string, attachments: Array<{name: string; url: string}> = []): Promise<Comment> {
     try {
-      console.log('Adding comment (simulated):', { taskId, body, attachments });
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('comments')
+        .insert({
+          task_id: taskId,
+          body,
+          attachments
+        })
+        .select()
+        .single();
 
-      const comment: Comment = {
-        id: `comment-${Date.now()}`,
-        task_id: taskId,
-        author_user_id: 'current-user',
-        body,
-        attachments,
-        created_at: new Date().toISOString()
-      };
-
-      return comment;
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Tasks repository error:', error);
       throw error;
@@ -143,25 +108,15 @@ class TasksRepository {
 
   async getComments(taskId: string): Promise<Comment[]> {
     try {
-      // Return mock comments
-      return [
-        {
-          id: 'comment-1',
-          task_id: taskId,
-          author_user_id: 'current-user',
-          body: 'Tarefa criada automaticamente pelo seed. Cliente enviou os requisitos iniciais por email.',
-          attachments: [],
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'comment-2',
-          task_id: taskId,
-          author_user_id: 'current-user',
-          body: 'Aguardando aprovação da tarefa anterior para iniciar o briefing UX.',
-          attachments: [],
-          created_at: new Date().toISOString()
-        }
-      ];
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('comments')
+        .select('*')
+        .eq('task_id', taskId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error('Tasks repository error:', error);
       throw error;

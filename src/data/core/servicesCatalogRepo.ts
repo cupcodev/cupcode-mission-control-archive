@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+
 export interface ServiceCatalog {
   id: string;
   code: string;
@@ -25,8 +27,15 @@ export interface UpdateServiceInput extends Partial<CreateServiceInput> {}
 class ServicesCatalogRepository {
   async listActive(): Promise<ServiceCatalog[]> {
     try {
-      const services = await this.list();
-      return services.filter(s => s.is_active);
+      const { data, error } = await (supabase as any)
+        .schema('core')
+        .from('services_catalog')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error('Services catalog repository error:', error);
       throw error;
@@ -35,69 +44,14 @@ class ServicesCatalogRepository {
 
   async list(): Promise<ServiceCatalog[]> {
     try {
-      // Return mock data for now
-      return [
-        {
-          id: 'dev-fe-1',
-          code: 'DEV_FE',
-          name: 'Desenvolvimento Frontend',
-          description: 'Desenvolvimento de interfaces e experiência do usuário',
-          domain: 'development',
-          is_active: true,
-          metadata: {},
-          created_by: 'system',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'dev-be-1',
-          code: 'DEV_BE',
-          name: 'Desenvolvimento Backend',
-          description: 'Desenvolvimento de APIs e sistemas backend',
-          domain: 'development',
-          is_active: true,
-          metadata: {},
-          created_by: 'system',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'brand-1',
-          code: 'BRAND',
-          name: 'Branding',
-          description: 'Criação e gestão de marca',
-          domain: 'marketing',
-          is_active: true,
-          metadata: {},
-          created_by: 'system',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'traffic-1',
-          code: 'TRAFFIC',
-          name: 'Tráfego Pago',
-          description: 'Gestão de campanhas de marketing digital',
-          domain: 'marketing',
-          is_active: true,
-          metadata: {},
-          created_by: 'system',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'support-1',
-          code: 'SUPPORT',
-          name: 'Suporte',
-          description: 'Suporte técnico e atendimento ao cliente',
-          domain: 'support',
-          is_active: true,
-          metadata: {},
-          created_by: 'system',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
+      const { data, error } = await (supabase as any)
+        .schema('core')
+        .from('services_catalog')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error('Services catalog repository error:', error);
       throw error;
@@ -106,8 +60,15 @@ class ServicesCatalogRepository {
 
   async get(id: string): Promise<ServiceCatalog | null> {
     try {
-      const services = await this.list();
-      return services.find(s => s.id === id) || null;
+      const { data, error } = await (supabase as any)
+        .schema('core')
+        .from('services_catalog')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Services catalog repository error:', error);
       return null;
@@ -116,17 +77,19 @@ class ServicesCatalogRepository {
 
   async create(input: CreateServiceInput): Promise<ServiceCatalog> {
     try {
-      console.log('Creating service (simulated):', input);
-      
-      return {
-        id: `service-${Date.now()}`,
-        ...input,
-        is_active: input.is_active !== false,
-        metadata: input.metadata || {},
-        created_by: 'current-user',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      const { data, error } = await (supabase as any)
+        .schema('core')
+        .from('services_catalog')
+        .insert({
+          ...input,
+          is_active: input.is_active !== false,
+          metadata: input.metadata || {}
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Services catalog repository error:', error);
       throw error;
@@ -135,16 +98,16 @@ class ServicesCatalogRepository {
 
   async update(id: string, input: UpdateServiceInput): Promise<ServiceCatalog> {
     try {
-      console.log('Updating service (simulated):', { id, input });
-      
-      const service = await this.get(id);
-      if (!service) throw new Error('Service not found');
+      const { data, error } = await (supabase as any)
+        .schema('core')
+        .from('services_catalog')
+        .update(input)
+        .eq('id', id)
+        .select()
+        .single();
 
-      return {
-        ...service,
-        ...input,
-        updated_at: new Date().toISOString()
-      };
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Services catalog repository error:', error);
       throw error;
@@ -153,7 +116,13 @@ class ServicesCatalogRepository {
 
   async deactivate(id: string): Promise<void> {
     try {
-      console.log('Deactivating service (simulated):', id);
+      const { error } = await (supabase as any)
+        .schema('core')
+        .from('services_catalog')
+        .update({ is_active: false })
+        .eq('id', id);
+
+      if (error) throw error;
     } catch (error) {
       console.error('Services catalog repository error:', error);
       throw error;

@@ -21,21 +21,33 @@ export interface ClientServiceWithDetails extends ClientService {
 class ClientServicesRepository {
   async listByClient(clientId: string): Promise<ClientServiceWithDetails[]> {
     try {
-      // For now return mock data since we can't access core schema from client
-      return [
-        {
-          id: 'cs-1',
-          client_id: clientId,
-          service_id: 'dev-fe-1',
-          status: 'active',
-          metadata: {},
-          created_at: new Date().toISOString(),
-          service_name: 'Desenvolvimento Frontend',
-          service_code: 'DEV_FE',
-          service_domain: 'development',
-          client_name: 'Cliente Demo'
-        }
-      ];
+      // Type assertion until types are regenerated
+      const { data, error } = await (supabase as any)
+        .schema('core')
+        .from('client_services')
+        .select(`
+          *,
+          clients!inner(display_name),
+          services_catalog!inner(name, code, domain)
+        `)
+        .eq('client_id', clientId);
+
+      if (error) throw error;
+      
+      return (data || []).map((item: any) => ({
+        id: item.id,
+        client_id: item.client_id,
+        service_id: item.service_id,
+        status: item.status,
+        start_date: item.start_date,
+        end_date: item.end_date,
+        metadata: item.metadata,
+        created_at: item.created_at,
+        service_name: item.services_catalog.name,
+        service_code: item.services_catalog.code,
+        service_domain: item.services_catalog.domain,
+        client_name: item.clients.display_name
+      }));
     } catch (error) {
       console.error('Client services repository error:', error);
       throw error;
@@ -44,17 +56,20 @@ class ClientServicesRepository {
 
   async link(clientId: string, serviceId: string): Promise<ClientService> {
     try {
-      // Mock implementation for now
-      console.log('Linking client service (simulated):', { clientId, serviceId });
-      
-      return {
-        id: `cs-${Date.now()}`,
-        client_id: clientId,
-        service_id: serviceId,
-        status: 'active',
-        metadata: {},
-        created_at: new Date().toISOString()
-      };
+      const { data, error } = await (supabase as any)
+        .schema('core')
+        .from('client_services')
+        .insert({
+          client_id: clientId,
+          service_id: serviceId,
+          status: 'active',
+          metadata: {}
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Client services repository error:', error);
       throw error;
@@ -63,7 +78,13 @@ class ClientServicesRepository {
 
   async unlink(linkId: string): Promise<void> {
     try {
-      console.log('Unlinking client service (simulated):', linkId);
+      const { error } = await (supabase as any)
+        .schema('core')
+        .from('client_services')
+        .delete()
+        .eq('id', linkId);
+
+      if (error) throw error;
     } catch (error) {
       console.error('Client services repository error:', error);
       throw error;
@@ -72,16 +93,16 @@ class ClientServicesRepository {
 
   async updateStatus(linkId: string, status: 'active' | 'paused' | 'ended'): Promise<ClientService> {
     try {
-      console.log('Updating client service status (simulated):', { linkId, status });
-      
-      return {
-        id: linkId,
-        client_id: 'demo-client-1',
-        service_id: 'dev-fe-1',
-        status,
-        metadata: {},
-        created_at: new Date().toISOString()
-      };
+      const { data, error } = await (supabase as any)
+        .schema('core')
+        .from('client_services')
+        .update({ status })
+        .eq('id', linkId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Client services repository error:', error);
       throw error;

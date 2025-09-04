@@ -7,22 +7,22 @@ class InstancesRepository {
     variables: Record<string, any> = {}
   ): Promise<WorkflowInstance> {
     try {
-      // Simulate instance creation since MC schema is not in types yet
-      console.log('Creating instance (simulated):', { templateId, variables });
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('workflow_instances')
+        .insert({
+          template_id: templateId,
+          template_version: 1,
+          status: 'running',
+          client_id: variables.client_id,
+          service_id: variables.service_id,
+          variables
+        })
+        .select()
+        .single();
 
-      const newInstance: WorkflowInstance = {
-        id: `instance-${Date.now()}`,
-        template_id: templateId,
-        template_version: 1,
-        status: 'running',
-        client_id: variables.client_id,
-        service_id: variables.service_id,
-        variables,
-        created_by: 'current-user',
-        created_at: new Date().toISOString()
-      };
-
-      return newInstance;
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Instances repository error:', error);
       throw error;
@@ -31,41 +31,14 @@ class InstancesRepository {
 
   async listMineOrParticipant(): Promise<WorkflowInstance[]> {
     try {
-      // Return enhanced mock data with client and service information
-      return [
-        {
-          id: 'instance-1',
-          template_id: 'template-1',
-          template_version: 1,
-          status: 'running',
-          client_id: 'demo-client-1',
-          service_id: 'dev-fe-1',
-          variables: { 
-            project_name: 'Projeto de Desenvolvimento Frontend',
-            client_name: 'Cliente Demo'
-          },
-          created_by: 'current-user',
-          created_at: new Date().toISOString(),
-          client_name: 'Cliente Demo',
-          service_name: 'Desenvolvimento Frontend'
-        },
-        {
-          id: 'instance-2',
-          template_id: 'template-2',
-          template_version: 1,
-          status: 'paused',
-          client_id: 'demo-client-1',
-          service_id: 'traffic-1',
-          variables: { 
-            project_name: 'Campanha de Tráfego Pago',
-            client_name: 'Cliente Demo'
-          },
-          created_by: 'current-user',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          client_name: 'Cliente Demo',
-          service_name: 'Tráfego Pago'
-        }
-      ];
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('v_instances_enriched')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error('Instances repository error:', error);
       throw error;
@@ -74,8 +47,15 @@ class InstancesRepository {
 
   async get(id: string): Promise<WorkflowInstance | null> {
     try {
-      const instances = await this.listMineOrParticipant();
-      return instances.find(i => i.id === id) || null;
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('v_instances_enriched')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Instances repository error:', error);
       throw error;
@@ -89,17 +69,20 @@ class InstancesRepository {
     isClient: boolean = false
   ): Promise<InstanceParticipant> {
     try {
-      console.log('Adding participant (simulated):', { instanceId, userId, roleInInstance, isClient });
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('instance_participants')
+        .insert({
+          instance_id: instanceId,
+          user_id: userId,
+          role_in_instance: roleInInstance,
+          is_client: isClient
+        })
+        .select()
+        .single();
 
-      const participant: InstanceParticipant = {
-        instance_id: instanceId,
-        user_id: userId,
-        role_in_instance: roleInInstance,
-        is_client: isClient,
-        added_at: new Date().toISOString()
-      };
-
-      return participant;
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Instances repository error:', error);
       throw error;
@@ -108,16 +91,14 @@ class InstancesRepository {
 
   async getParticipants(instanceId: string): Promise<InstanceParticipant[]> {
     try {
-      // Return mock participants
-      return [
-        {
-          instance_id: instanceId,
-          user_id: 'current-user',
-          role_in_instance: 'PO',
-          is_client: false,
-          added_at: new Date().toISOString()
-        }
-      ];
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('instance_participants')
+        .select('*')
+        .eq('instance_id', instanceId);
+
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       console.error('Instances repository error:', error);
       throw error;
