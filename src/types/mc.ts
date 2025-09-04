@@ -20,6 +20,9 @@ export interface WorkflowInstance {
   variables: Record<string, any>;
   created_by: string;
   created_at: string;
+  // Optional enriched fields from view
+  client_name?: string;
+  service_name?: string;
 }
 
 export interface Task {

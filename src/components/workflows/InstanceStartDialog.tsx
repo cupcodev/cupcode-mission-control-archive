@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { templatesRepo, instancesRepo, tasksRepo, type WorkflowTemplate } from '@/data/mc';
 import { generateInitialTasks } from '@/lib/workflow-engine';
+import { clientsRepo, servicesCatalogRepo } from '@/data/core';
 
 interface InstanceStartDialogProps {
   template?: WorkflowTemplate;
@@ -25,6 +26,8 @@ export const InstanceStartDialog = ({
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(template || null);
   const [loading, setLoading] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     client_id: '',
     service_id: '',
@@ -33,8 +36,12 @@ export const InstanceStartDialog = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    if (open && !template) {
-      loadTemplates();
+    if (open) {
+      if (!template) {
+        loadTemplates();
+      }
+      loadClients();
+      loadServices();
     }
   }, [open, template]);
 
@@ -56,6 +63,24 @@ export const InstanceStartDialog = ({
         description: 'Não foi possível carregar os templates.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const loadClients = async () => {
+    try {
+      const data = await clientsRepo.list();
+      setClients(data);
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
+    }
+  };
+
+  const loadServices = async () => {
+    try {
+      const data = await servicesCatalogRepo.listActive();
+      setServices(data);
+    } catch (error) {
+      console.error('Erro ao carregar serviços:', error);
     }
   };
 
@@ -131,6 +156,8 @@ export const InstanceStartDialog = ({
   const handleClose = () => {
     setFormData({ client_id: '', service_id: '', variables: '{}' });
     setSelectedTemplate(template || null);
+    setClients([]);
+    setServices([]);
     onOpenChange(false);
   };
 
@@ -175,24 +202,37 @@ export const InstanceStartDialog = ({
             </div>
           )}
 
-          <div>
-            <Label htmlFor="client_id">Client ID (opcional)</Label>
-            <Input
-              id="client_id"
-              value={formData.client_id}
-              onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-              placeholder="UUID do cliente"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="service_id">Service ID (opcional)</Label>
-            <Input
-              id="service_id"
-              value={formData.service_id}
-              onChange={(e) => setFormData({ ...formData, service_id: e.target.value })}
-              placeholder="UUID do serviço"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="client_id">Cliente</Label>
+              <Select value={formData.client_id} onValueChange={(value) => setFormData({ ...formData, client_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.display_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="service_id">Serviço</Label>
+              <Select value={formData.service_id} onValueChange={(value) => setFormData({ ...formData, service_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um serviço" />
+                </SelectTrigger>
+                <SelectContent>
+                  {services.map((service) => (
+                    <SelectItem key={service.id} value={service.id}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>

@@ -21,6 +21,7 @@ import { Settings } from "./pages/Settings";
 import { Team } from "./pages/Team";
 import { UserManagement } from "./pages/UserManagement";
 import { ClientManagement } from "./pages/ClientManagement";
+import { ClientsManagement } from "./pages/ClientsManagement";
 import { Integrations } from "./pages/Integrations";
 import { AuditLog } from "./pages/AuditLog";
 import { Clients } from "./pages/Clients";
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="tasks/:id" element={<TaskDetail />} />
             <Route path="clients" element={<Clients />} />
             <Route path="clients/:clientId" element={<Clients />} />
+            <Route path="clients-management" element={<ClientsManagement />} />
             <Route path="calendar" element={<Calendar />} />
             <Route path="profile" element={<Profile />} />
             <Route path="profile/edit" element={<EditProfile />} />

@@ -31,16 +31,39 @@ class InstancesRepository {
 
   async listMineOrParticipant(): Promise<WorkflowInstance[]> {
     try {
-      // Return mock instances for now
+      // Return enhanced mock data with client and service information
       return [
         {
           id: 'instance-1',
           template_id: 'template-1',
           template_version: 1,
           status: 'running',
-          variables: { project_name: 'Projeto de Teste', client_name: 'Cliente Exemplo' },
+          client_id: 'demo-client-1',
+          service_id: 'dev-fe-1',
+          variables: { 
+            project_name: 'Projeto de Desenvolvimento Frontend',
+            client_name: 'Cliente Demo'
+          },
           created_by: 'current-user',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          client_name: 'Cliente Demo',
+          service_name: 'Desenvolvimento Frontend'
+        },
+        {
+          id: 'instance-2',
+          template_id: 'template-2',
+          template_version: 1,
+          status: 'paused',
+          client_id: 'demo-client-1',
+          service_id: 'traffic-1',
+          variables: { 
+            project_name: 'Campanha de Tráfego Pago',
+            client_name: 'Cliente Demo'
+          },
+          created_by: 'current-user',
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          client_name: 'Cliente Demo',
+          service_name: 'Tráfego Pago'
         }
       ];
     } catch (error) {
