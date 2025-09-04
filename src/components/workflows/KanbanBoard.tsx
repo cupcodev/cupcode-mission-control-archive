@@ -9,6 +9,7 @@ import { TaskCard } from './TaskCard';
 import { BoardFilters } from './BoardFilters';
 import { BoardToolbar } from './BoardToolbar';
 import { EmptyState } from './EmptyState';
+import { TaskDrawer } from './TaskDrawer';
 
 interface KanbanBoardProps {
   instanceId: string;
@@ -51,6 +52,8 @@ export const KanbanBoard = ({ instanceId }: KanbanBoardProps) => {
   const [loading, setLoading] = useState(true);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [sortBy, setSortBy] = useState<'priority' | 'due_date' | 'created_at'>('priority');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     search: '',
     statuses: [...COLUMN_STATUSES],
@@ -268,6 +271,16 @@ export const KanbanBoard = ({ instanceId }: KanbanBoardProps) => {
 
   const getTotalCount = () => filteredTasks.length;
 
+  const handleOpenTask = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setIsDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false);
+    setSelectedTaskId(null);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -306,6 +319,8 @@ export const KanbanBoard = ({ instanceId }: KanbanBoardProps) => {
               title={COLUMN_LABELS[status]}
               tasks={getTasksByStatus(status)}
               canAcceptDrop={true}
+              onTaskClick={handleOpenTask}
+              canMoveTask={canMoveTask}
             />
           ))}
         </div>
@@ -320,6 +335,12 @@ export const KanbanBoard = ({ instanceId }: KanbanBoardProps) => {
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <TaskDrawer 
+        taskId={selectedTaskId}
+        isOpen={isDrawerOpen}
+        onClose={handleCloseDrawer}
+      />
     </div>
   );
 };

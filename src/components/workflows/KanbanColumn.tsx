@@ -10,9 +10,18 @@ interface KanbanColumnProps {
   title: string;
   tasks: Task[];
   canAcceptDrop: boolean;
+  onTaskClick?: (taskId: string) => void;
+  canMoveTask?: (task: Task) => boolean;
 }
 
-export const KanbanColumn = ({ status, title, tasks, canAcceptDrop }: KanbanColumnProps) => {
+export const KanbanColumn = ({ 
+  status, 
+  title, 
+  tasks, 
+  canAcceptDrop, 
+  onTaskClick,
+  canMoveTask
+}: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
   });
@@ -38,11 +47,12 @@ export const KanbanColumn = ({ status, title, tasks, canAcceptDrop }: KanbanColu
           strategy={verticalListSortingStrategy}
         >
           {tasks.map(task => (
-            <TaskCard 
-              key={task.id} 
-              task={task}
-              canMove={true} // This will be properly handled in the parent component
-            />
+            <div key={task.id} onClick={() => onTaskClick?.(task.id)} className="cursor-pointer">
+              <TaskCard 
+                task={task}
+                canMove={canMoveTask ? canMoveTask(task) : true}
+              />
+            </div>
           ))}
         </SortableContext>
         {tasks.length === 0 && (

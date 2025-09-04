@@ -194,7 +194,7 @@ export const TaskCard = ({ task, isDragging = false, canMove }: TaskCardProps) =
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.open(`/app/tasks/${task.id}`, '_blank')}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Abrir detalhes
               </DropdownMenuItem>
