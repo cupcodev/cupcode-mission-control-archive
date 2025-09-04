@@ -7,6 +7,8 @@ interface Profile {
   display_name: string | null;
   email: string | null;
   role: string | null;
+  bio: string | null;
+  avatar_url: string | null;
 }
 
 export const useAuth = () => {
@@ -31,7 +33,7 @@ export const useAuth = () => {
             try {
               const { data: profileData } = await supabase
                 .from('profiles')
-                .select('id, display_name, email, role')
+                .select('id, display_name, email, role, bio, avatar_url')
                 .eq('id', session.user.id)
                 .single();
               

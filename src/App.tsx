@@ -24,6 +24,8 @@ import { ClientManagement } from "./pages/ClientManagement";
 import { Integrations } from "./pages/Integrations";
 import { AuditLog } from "./pages/AuditLog";
 import { Clients } from "./pages/Clients";
+import { Profile } from "./pages/Profile";
+import { EditProfile } from "./pages/EditProfile";
 import NotFound from "./pages/NotFound";
 
 // Components
@@ -65,6 +67,8 @@ const App = () => (
             <Route path="tasks/:id" element={<TaskDetail />} />
             <Route path="clients" element={<Clients />} />
             <Route path="clients/:clientId" element={<Clients />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="profile/edit" element={<EditProfile />} />
             
             {/* Admin+ restricted routes */}
             <Route 
