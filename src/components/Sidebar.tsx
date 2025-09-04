@@ -69,6 +69,11 @@ const navigation: NavItem[] = [
     href: '/app/team',
     icon: Users,
     adminOnly: true,
+    submenu: [
+      { name: 'Papéis & Membros', href: '/app/team' },
+      { name: 'Usuários', href: '/app/user-management', adminOnly: true },
+      { name: 'Clientes', href: '/app/client-management', adminOnly: true },
+    ]
   },
   {
     name: 'Relatórios',

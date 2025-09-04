@@ -19,6 +19,8 @@ import { Approvals } from "./pages/Approvals";
 import { Reports } from "./pages/Reports";
 import { Settings } from "./pages/Settings";
 import { Team } from "./pages/Team";
+import { UserManagement } from "./pages/UserManagement";
+import { ClientManagement } from "./pages/ClientManagement";
 import { Integrations } from "./pages/Integrations";
 import { AuditLog } from "./pages/AuditLog";
 import { Clients } from "./pages/Clients";
@@ -62,6 +64,7 @@ const App = () => (
             <Route path="workflows/instances/:id/board" element={<WorkflowInstanceBoard />} />
             <Route path="tasks/:id" element={<TaskDetail />} />
             <Route path="clients" element={<Clients />} />
+            <Route path="clients/:clientId" element={<Clients />} />
             
             {/* Admin+ restricted routes */}
             <Route 
@@ -85,6 +88,22 @@ const App = () => (
               element={
                 <RequireRole minRole="admin">
                   <Team />
+                </RequireRole>
+              } 
+            />
+            <Route 
+              path="user-management" 
+              element={
+                <RequireRole minRole="admin">
+                  <UserManagement />
+                </RequireRole>
+              } 
+            />
+            <Route 
+              path="client-management" 
+              element={
+                <RequireRole minRole="admin">
+                  <ClientManagement />
                 </RequireRole>
               } 
             />
