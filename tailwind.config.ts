@@ -18,6 +18,25 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Tomorrow', 'ui-sans-serif', 'system-ui'],
+				tomorrow: ['Tomorrow', 'ui-sans-serif', 'system-ui'],
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-secondary': 'var(--gradient-secondary)',
+				'gradient-brand': 'var(--gradient-brand)',
+				'gradient-subtle': 'var(--gradient-subtle)',
+			},
+			backdropBlur: {
+				'glass': '16px',
+			},
+			boxShadow: {
+				'primary': 'var(--shadow-primary)',
+				'secondary': 'var(--shadow-secondary)',
+				'brand': 'var(--shadow-brand)',
+				'glass': 'var(--shadow-glass)',
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
