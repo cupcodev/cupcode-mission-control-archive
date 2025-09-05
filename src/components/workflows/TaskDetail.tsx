@@ -126,56 +126,51 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
       setEditDescription(taskData.fields?.description || '');
       setSelectedDate(taskData.due_at ? new Date(taskData.due_at) : undefined);
       
-      // Generate activity logs based on task changes
-      const logs = [];
-      
-      if (taskData.started_at) {
+      // Load real activity logs from database
+      try {
+        const logs = await tasksRepo.getActivityLogs(taskId);
+        setActivityLogs(logs);
+      } catch (error) {
+        console.error('Error loading activity logs:', error);
+        // Fallback to generated logs if DB query fails
+        const logs = [];
+        
+        if (taskData.started_at) {
+          logs.push({
+            id: 1,
+            task_id: taskId,
+            actor_user_id: taskData.assignee_user_id || 'system',
+            action: 'iniciou a tarefa',
+            before: { status: 'open' },
+            after: { status: 'in_progress' },
+            created_at: taskData.started_at
+          });
+        }
+        
+        if (taskData.completed_at) {
+          logs.push({
+            id: 2,
+            task_id: taskId,
+            actor_user_id: taskData.assignee_user_id || 'system',
+            action: 'concluiu a tarefa',
+            before: { status: 'in_progress' },
+            after: { status: 'done' },
+            created_at: taskData.completed_at
+          });
+        }
+        
         logs.push({
-          id: 1,
+          id: 4,
           task_id: taskId,
-          actor_user_id: taskData.assignee_user_id || 'system',
-          action: 'iniciou a tarefa',
-          before: { status: 'open' },
-          after: { status: 'in_progress' },
-          created_at: taskData.started_at
-        });
-      }
-      
-      if (taskData.completed_at) {
-        logs.push({
-          id: 2,
-          task_id: taskId,
-          actor_user_id: taskData.assignee_user_id || 'system',
-          action: 'concluiu a tarefa',
-          before: { status: 'in_progress' },
-          after: { status: 'done' },
-          created_at: taskData.completed_at
-        });
-      }
-      
-      if (taskData.status === 'blocked' && taskData.fields?.block_reason) {
-        logs.push({
-          id: 3,
-          task_id: taskId,
-          actor_user_id: taskData.assignee_user_id || 'system',
-          action: 'bloqueou a tarefa',
+          actor_user_id: taskData.created_by || 'system',
+          action: 'criou a tarefa',
           before: {},
-          after: { status: 'blocked', reason: taskData.fields.block_reason },
-          created_at: new Date().toISOString()
+          after: { status: 'open' },
+          created_at: taskData.created_at
         });
+        
+        setActivityLogs(logs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
       }
-      
-      logs.push({
-        id: 4,
-        task_id: taskId,
-        actor_user_id: taskData.created_by || 'system',
-        action: 'criou a tarefa',
-        before: {},
-        after: { status: 'open' },
-        created_at: taskData.created_at
-      });
-      
-      setActivityLogs(logs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
     } catch (error) {
       console.error('Erro ao carregar tarefa:', error);
       toast({
@@ -193,7 +188,9 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
     
     try {
       setSaving(true);
+      // Update both the actual title field AND the fields.title for consistency
       await tasksRepo.update(task.id, { 
+        title: editTitle,
         fields: { ...task.fields, title: editTitle }
       });
       setTask({ ...task, title: editTitle, fields: { ...task.fields, title: editTitle } });
@@ -203,8 +200,8 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         description: 'O título da tarefa foi atualizado com sucesso.',
       });
       onUpdate?.();
-      // Reload task data to get fresh data
-      loadTaskData();
+      // Reload task data to get fresh activity logs
+      setTimeout(() => loadTaskData(), 500);
     } catch (error) {
       console.error('Erro ao salvar título:', error);
       toast({
@@ -233,6 +230,8 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         description: `Status alterado para "${newStatus}".`,
       });
       onUpdate?.();
+      // Reload task data to get fresh activity logs
+      setTimeout(() => loadTaskData(), 500);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       toast({
@@ -257,6 +256,8 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         description: 'A tarefa foi atribuída para você.',
       });
       onUpdate?.();
+      // Reload task data to get fresh activity logs
+      setTimeout(() => loadTaskData(), 500);
     } catch (error) {
       console.error('Erro ao atribuir tarefa:', error);
       toast({
@@ -316,6 +317,8 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         description: `Prioridade alterada para ${priority}.`,
       });
       onUpdate?.();
+      // Reload task data to get fresh activity logs
+      setTimeout(() => loadTaskData(), 500);
     } catch (error) {
       console.error('Erro ao atualizar prioridade:', error);
       toast({
@@ -342,6 +345,8 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         description: date ? `Data alterada para ${format(date, 'dd/MM/yyyy', { locale: ptBR })}` : 'Data removida',
       });
       onUpdate?.();
+      // Reload task data to get fresh activity logs
+      setTimeout(() => loadTaskData(), 500);
     } catch (error) {
       console.error('Erro ao atualizar data:', error);
       toast({
@@ -467,8 +472,8 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         title: 'Comentário adicionado',
         description: 'Seu comentário foi publicado.',
       });
-      // Recarregar dados para atualizar histórico
-      loadTaskData();
+      // Reload data to update everything
+      setTimeout(() => loadTaskData(), 500);
       onUpdate?.();
     } catch (error) {
       console.error('Erro ao adicionar comentário:', error);

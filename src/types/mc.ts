@@ -129,6 +129,7 @@ export interface CreateTaskInput {
 }
 
 export interface UpdateTaskInput {
+  title?: string;
   status?: 'open' | 'in_progress' | 'blocked' | 'done' | 'rejected';
   priority?: number;
   assignee_user_id?: string;
