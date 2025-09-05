@@ -7,12 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Users, Briefcase } from 'lucide-react';
 import { clientsRepo, servicesCatalogRepo, clientServicesRepo } from '@/data/core';
 import { useToast } from '@/hooks/use-toast';
+import { ClientCreateDialog } from '@/components/workflows/ClientCreateDialog';
 
 export const ClientsManagement = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [clientDialogOpen, setClientDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export const ClientsManagement = () => {
             Gerencie clientes e serviços contratados
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setClientDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Novo Cliente
         </Button>
@@ -161,12 +163,18 @@ export const ClientsManagement = () => {
           <p className="text-muted-foreground">
             Nenhum cliente cadastrado ainda.
           </p>
-          <Button className="mt-4">
+          <Button className="mt-4" onClick={() => setClientDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Cadastrar Primeiro Cliente
           </Button>
         </div>
       )}
+
+      <ClientCreateDialog
+        open={clientDialogOpen}
+        onOpenChange={setClientDialogOpen}
+        onClientCreated={loadData}
+      />
     </div>
   );
 };

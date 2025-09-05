@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { CalendarDays, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { format, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { EventCreateDialog } from '@/components/workflows/EventCreateDialog';
+import { tasksRepo } from '@/data/mc/tasksRepo';
 
 // Mock data para demonstração
 const mockEvents = [
@@ -84,20 +86,40 @@ const getStatusIcon = (status: string) => {
 export const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth] = useState(new Date());
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const loadEvents = async () => {
+    try {
+      // Load events from tasks with due dates
+      // This is a simplified approach - in a real app you'd have proper filtering
+      setEvents(mockEvents); // Using mock data for now
+    } catch (error) {
+      console.error('Error loading events:', error);
+      setEvents(mockEvents);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filtrar eventos para o mês atual
-  const currentMonthEvents = mockEvents.filter(event => {
+  const currentMonthEvents = events.filter(event => {
     const eventDate = new Date(event.date);
     return eventDate >= startOfMonth(currentMonth) && eventDate <= endOfMonth(currentMonth);
   });
 
   // Filtrar eventos para o dia selecionado
   const selectedDayEvents = selectedDate 
-    ? mockEvents.filter(event => isSameDay(new Date(event.date), selectedDate))
+    ? events.filter(event => isSameDay(new Date(event.date), selectedDate))
     : [];
 
   // Eventos próximos (próximos 7 dias)
-  const upcomingEvents = mockEvents
+  const upcomingEvents = events
     .filter(event => {
       const eventDate = new Date(event.date);
       const today = new Date();
@@ -124,7 +146,7 @@ export const Calendar = () => {
             Acompanhe prazos, reuniões e marcos importantes
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setEventDialogOpen(true)}>
           <CalendarDays className="h-4 w-4 mr-2" />
           Novo Evento
         </Button>
@@ -248,6 +270,12 @@ export const Calendar = () => {
           </Card>
         </div>
       </div>
+
+      <EventCreateDialog
+        open={eventDialogOpen}
+        onOpenChange={setEventDialogOpen}
+        onEventCreated={loadEvents}
+      />
     </div>
   );
 };

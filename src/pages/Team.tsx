@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { rolesRepo, Role, RoleMemberWithProfile, AssignmentRule, CreateRoleInput } from '@/data/mc/rolesRepo';
 import { Users, Plus, Trash2, Settings, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
+import { UserManagement } from './UserManagement';
+import { ClientsManagement } from './ClientsManagement';
 
 export const Team = () => {
   const { user, profile } = useAuth();
@@ -230,6 +232,8 @@ export const Team = () => {
           <TabsTrigger value="roles">Papéis</TabsTrigger>
           <TabsTrigger value="members" disabled={!selectedRole}>Membros</TabsTrigger>
           <TabsTrigger value="rules" disabled={!selectedRole}>Regras de Atribuição</TabsTrigger>
+          <TabsTrigger value="users">Usuários</TabsTrigger>
+          <TabsTrigger value="clients">Clientes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles" className="space-y-4">
@@ -524,6 +528,14 @@ export const Team = () => {
               </Card>
             </>
           )}
+        </TabsContent>
+
+        <TabsContent value="users" className="space-y-4">
+          <UserManagement />
+        </TabsContent>
+
+        <TabsContent value="clients" className="space-y-4">
+          <ClientsManagement />
         </TabsContent>
       </Tabs>
     </div>

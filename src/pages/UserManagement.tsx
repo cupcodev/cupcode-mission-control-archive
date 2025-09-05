@@ -3,15 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, Users, Briefcase, Edit, Trash2, UserPlus, Shield } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Edit, Trash2, Users, UserPlus, Shield } from 'lucide-react';
+import { UserCreateDialog } from '@/components/workflows/UserCreateDialog';
 
 interface UserProfile {
   id: string;
@@ -34,19 +33,24 @@ interface CreateUserInput {
 export const UserManagement = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [formData, setFormData] = useState<CreateUserInput>({
-    email: '',
-    display_name: '',
-    role: 'user',
-    password: ''
-  });
 
   const { profile } = useAuth();
+  const { toast } = useToast();
   const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
   const isSuperAdmin = profile?.role === 'superadmin';
+
+  const handleOpenDialog = (user?: UserProfile) => {
+    setEditingUser(user || null);
+    setUserDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setUserDialogOpen(false);
+    setEditingUser(null);
+  };
 
   useEffect(() => {
     loadUsers();
@@ -107,7 +111,11 @@ export const UserManagement = () => {
       setUsers(allUsers);
     } catch (error: any) {
       console.error('Erro ao carregar usuários:', error);
-      toast.error('Erro ao carregar usuários: ' + error.message);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao carregar usuários: ' + error.message,
+        variant: 'destructive',
+      });
       
       // Fallback to mock data on error
       const mockUsers: UserProfile[] = [
@@ -136,86 +144,25 @@ export const UserManagement = () => {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      email: '',
-      display_name: '',
-      role: 'user',
-      password: ''
-    });
-    setEditingUser(null);
-  };
-
-  const handleOpenDialog = (user?: UserProfile) => {
-    if (user) {
-      setEditingUser(user);
-      setFormData({
-        email: user.email,
-        display_name: user.display_name || '',
-        role: user.role as any,
-        password: '' // Don't pre-fill password
-      });
-    } else {
-      resetForm();
-    }
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    resetForm();
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.email.trim() || !formData.display_name.trim()) {
-      toast.error('Email e nome são obrigatórios');
-      return;
-    }
-
-    if (!editingUser && !formData.password.trim()) {
-      toast.error('Senha é obrigatória para novos usuários');
-      return;
-    }
-
-    try {
-      if (editingUser) {
-        // Update existing user
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            display_name: formData.display_name,
-            role: formData.role,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', editingUser.id);
-
-        if (error) throw error;
-        toast.success('Usuário atualizado com sucesso');
-      } else {
-        // Create new user - This would typically be done through an admin function
-        // For now, we'll just show success but not actually create the user
-        toast.success('Usuário criado com sucesso (funcionalidade em desenvolvimento)');
-      }
-      
-      handleCloseDialog();
-      loadUsers();
-    } catch (error: any) {
-      toast.error('Erro ao salvar usuário: ' + error.message);
-    }
-  };
-
   const handleToggleActive = async (userId: string, isActive: boolean) => {
     try {
       // This would update the user's active status
       // For now, just show success
-      toast.success(isActive ? 'Usuário ativado' : 'Usuário desativado');
+      toast({
+        title: 'Sucesso',
+        description: isActive ? 'Usuário ativado' : 'Usuário desativado',
+      });
       
       // Update local state
       setUsers(users.map(user => 
         user.id === userId ? { ...user, is_active: isActive } : user
       ));
     } catch (error: any) {
-      toast.error('Erro ao alterar status: ' + error.message);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao alterar status: ' + error.message,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -226,12 +173,19 @@ export const UserManagement = () => {
 
     try {
       // This would delete the user - requires admin privileges
-      toast.success('Usuário excluído com sucesso (funcionalidade em desenvolvimento)');
+      toast({
+        title: 'Sucesso',
+        description: 'Usuário excluído com sucesso (funcionalidade em desenvolvimento)',
+      });
       
       // Update local state
       setUsers(users.filter(user => user.id !== userId));
     } catch (error: any) {
-      toast.error('Erro ao excluir usuário: ' + error.message);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao excluir usuário: ' + error.message,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -407,82 +361,12 @@ export const UserManagement = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingUser ? 'Editar Usuário' : 'Novo Usuário'}
-            </DialogTitle>
-            <DialogDescription>
-              {editingUser ? 'Atualize as informações do usuário.' : 'Cadastre um novo usuário no sistema.'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="usuario@exemplo.com"
-                disabled={!!editingUser}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="display_name">Nome *</Label>
-              <Input
-                id="display_name"
-                value={formData.display_name}
-                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                placeholder="Nome completo"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="role">Cargo *</Label>
-              <Select 
-                value={formData.role} 
-                onValueChange={(value: any) => setFormData({ ...formData, role: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um cargo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">Usuário</SelectItem>
-                  <SelectItem value="client">Cliente</SelectItem>
-                  {isAdmin && <SelectItem value="admin">Administrador</SelectItem>}
-                  {isSuperAdmin && <SelectItem value="superadmin">Super Admin</SelectItem>}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {!editingUser && (
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Senha temporária"
-                />
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmit}>
-              {editingUser ? 'Atualizar' : 'Cadastrar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UserCreateDialog
+        open={userDialogOpen}
+        onOpenChange={setUserDialogOpen}
+        onUserCreated={loadUsers}
+        editingUser={editingUser}
+      />
     </div>
   );
 };

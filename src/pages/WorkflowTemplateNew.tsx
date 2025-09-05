@@ -79,11 +79,11 @@ export const WorkflowTemplateNew = () => {
       });
 
       navigate('/app/workflows/templates');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar template:', error);
       toast({
         title: 'Erro',
-        description: 'Não foi possível salvar o template.',
+        description: `Não foi possível salvar o template: ${error.message || 'Erro desconhecido'}`,
         variant: 'destructive',
       });
     } finally {
