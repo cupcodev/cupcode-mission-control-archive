@@ -31,14 +31,23 @@ class TemplatesRepository {
 
   async create(template: CreateTemplateInput): Promise<WorkflowTemplate> {
     try {
+      // Attach created_by from the current user
+      const { data: authData, error: authError } = await (supabase as any).auth.getUser();
+      if (authError) throw authError;
+      const user = authData?.user;
+      if (!user) throw new Error('Não autenticado');
+
+      const payload = {
+        ...template,
+        version: template.version || 1,
+        is_active: template.is_active !== false,
+        created_by: user.id,
+      };
+
       const { data, error } = await (supabase as any)
         .schema('mc')
         .from('workflow_templates')
-        .insert({
-          ...template,
-          version: template.version || 1,
-          is_active: template.is_active !== false
-        })
+        .insert(payload)
         .select()
         .single();
 

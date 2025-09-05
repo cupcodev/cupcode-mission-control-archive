@@ -38,15 +38,24 @@ class TasksRepository {
 
   async create(task: CreateTaskInput): Promise<Task> {
     try {
+      // Ensure we have the current user for created_by
+      const { data: authData, error: authError } = await (supabase as any).auth.getUser();
+      if (authError) throw authError;
+      const user = authData?.user;
+      if (!user) throw new Error('Não autenticado');
+
+      const payload = {
+        ...task,
+        status: task.status || 'open',
+        priority: task.priority || 1,
+        fields: task.fields || {},
+        created_by: user.id,
+      };
+
       const { data, error } = await (supabase as any)
         .schema('mc')
         .from('tasks')
-        .insert({
-          ...task,
-          status: task.status || 'open',
-          priority: task.priority || 1,
-          fields: task.fields || {}
-        })
+        .insert(payload)
         .select()
         .single();
 

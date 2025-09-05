@@ -84,6 +84,16 @@ export const EventCreateDialog = ({ open, onOpenChange, onEventCreated }: EventC
       return;
     }
 
+    // Projeto/instância é obrigatório para criar o evento
+    if (!formData.instanceId) {
+      toast({
+        title: 'Erro',
+        description: 'Selecione um projeto/instância',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -94,7 +104,7 @@ export const EventCreateDialog = ({ open, onOpenChange, onEventCreated }: EventC
 
       // Create task as calendar event
       await tasksRepo.create({
-        workflow_instance_id: formData.instanceId || 'event-instance',
+        workflow_instance_id: formData.instanceId,
         node_id: `event-${Date.now()}`,
         type: 'form', // Use 'form' type for events
         title: formData.title,
@@ -202,7 +212,7 @@ export const EventCreateDialog = ({ open, onOpenChange, onEventCreated }: EventC
           </div>
 
           <div>
-            <Label htmlFor="instance">Projeto (opcional)</Label>
+            <Label htmlFor="instance">Projeto *</Label>
             <Select 
               value={formData.instanceId} 
               onValueChange={(value) => setFormData({ ...formData, instanceId: value })}
