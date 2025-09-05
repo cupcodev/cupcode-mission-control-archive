@@ -7,6 +7,11 @@ class InstancesRepository {
     variables: Record<string, any> = {}
   ): Promise<WorkflowInstance> {
     try {
+      const { data: authData, error: authError } = await (supabase as any).auth.getUser();
+      if (authError) throw authError;
+      const user = authData?.user;
+      if (!user) throw new Error('Não autenticado');
+
       const { data, error } = await (supabase as any)
         .schema('mc')
         .from('workflow_instances')
@@ -16,7 +21,8 @@ class InstancesRepository {
           status: 'running',
           client_id: variables.client_id,
           service_id: variables.service_id,
-          variables
+          variables,
+          created_by: user.id,
         })
         .select()
         .single();

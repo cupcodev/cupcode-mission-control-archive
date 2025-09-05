@@ -12,6 +12,8 @@ import { templatesRepo, type WorkflowTemplate } from '@/data/mc';
 import { RequireRole } from '@/components/RequireRole';
 import { useNavigate } from 'react-router-dom';
 import { InstanceStartDialog } from '@/components/workflows/InstanceStartDialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { TemplatePreview } from '@/components/workflows/TemplatePreview';
 
 export const WorkflowTemplates = () => {
   const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
@@ -20,6 +22,8 @@ export const WorkflowTemplates = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(null);
   const [showInstanceDialog, setShowInstanceDialog] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<WorkflowTemplate | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -194,9 +198,9 @@ export const WorkflowTemplates = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/app/workflows/templates/${template.id}`)}>
+                            <DropdownMenuItem onClick={() => { setPreviewTemplate(template); setShowPreview(true); }}>
                               <Eye className="h-4 w-4 mr-2" />
-                              Ver
+                              Ver detalhes
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => navigate(`/app/workflows/templates/${template.id}/edit`)}>
                               <Edit className="h-4 w-4 mr-2" />
@@ -235,6 +239,18 @@ export const WorkflowTemplates = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Preview Dialog */}
+        {previewTemplate && (
+          <Dialog open={showPreview} onOpenChange={setShowPreview}>
+            <DialogContent className="sm:max-w-[700px]">
+              <DialogHeader>
+                <DialogTitle>Detalhes do Template</DialogTitle>
+              </DialogHeader>
+              <TemplatePreview spec={previewTemplate.spec} />
+            </DialogContent>
+          </Dialog>
+        )}
 
         {selectedTemplate && (
           <InstanceStartDialog

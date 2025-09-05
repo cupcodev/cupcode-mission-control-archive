@@ -68,44 +68,9 @@ export const UserManagement = () => {
 
       if (error) throw error;
 
-      // Mock data to supplement the actual data if needed
-      const mockUsers: UserProfile[] = [
-        {
-          id: '1',
-          email: 'admin@cupcode.com.br',
-          display_name: 'Administrador',
-          role: 'superadmin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_sign_in_at: new Date().toISOString(),
-          is_active: true
-        },
-        {
-          id: '2',
-          email: 'manager@cupcode.com.br',
-          display_name: 'Gerente',
-          role: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_sign_in_at: new Date().toISOString(),
-          is_active: true
-        },
-        {
-          id: '3',
-          email: 'cliente@empresa.com',
-          display_name: 'Cliente Teste',
-          role: 'client',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          last_sign_in_at: new Date().toISOString(),
-          is_active: true
-        }
-      ];
-
-      // Combine actual data with mock data
-      const allUsers = [...(profiles || []), ...mockUsers].map(user => ({
+      const allUsers = (profiles || []).map((user: any) => ({
         ...user,
-        is_active: true // Default to active for now
+        is_active: true // Campo local apenas para exibição
       }));
 
       setUsers(allUsers);
@@ -117,28 +82,7 @@ export const UserManagement = () => {
         variant: 'destructive',
       });
       
-      // Fallback to mock data on error
-      const mockUsers: UserProfile[] = [
-        {
-          id: '1',
-          email: 'admin@cupcode.com.br',
-          display_name: 'Administrador',
-          role: 'superadmin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          is_active: true
-        },
-        {
-          id: '2',
-          email: 'manager@cupcode.com.br',
-          display_name: 'Gerente',
-          role: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          is_active: true
-        }
-      ];
-      setUsers(mockUsers);
+      setUsers([]);
     } finally {
       setLoading(false);
     }

@@ -30,6 +30,7 @@ export const Team = () => {
   const [newRole, setNewRole] = useState<CreateRoleInput>({ name: '', description: '' });
   const [searchEmail, setSearchEmail] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('roles');
 
   const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
@@ -227,7 +228,7 @@ export const Team = () => {
         </div>
       </div>
 
-      <Tabs value="roles" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="roles">Papéis</TabsTrigger>
           <TabsTrigger value="members" disabled={!selectedRole}>Membros</TabsTrigger>

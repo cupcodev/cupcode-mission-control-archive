@@ -70,12 +70,18 @@ class RolesRepository {
 
   async create(role: CreateRoleInput): Promise<Role> {
     try {
+      const { data: authData, error: authError } = await (supabase as any).auth.getUser();
+      if (authError) throw authError;
+      const user = authData?.user;
+      if (!user) throw new Error('Não autenticado');
+
       const { data, error } = await (supabase as any)
         .schema('mc')
         .from('roles')
         .insert({
           name: role.name,
-          description: role.description
+          description: role.description,
+          created_by: user.id
         })
         .select()
         .single();
