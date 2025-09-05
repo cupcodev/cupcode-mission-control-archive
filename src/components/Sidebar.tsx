@@ -77,7 +77,7 @@ const navigation: NavItem[] = [
     submenu: [
       { name: 'Papéis & Membros', href: '/app/team' },
       { name: 'Usuários', href: '/app/user-management', adminOnly: true },
-      { name: 'Clientes', href: '/app/client-management', adminOnly: true },
+      { name: 'Clientes', href: '/app/team?tab=clients', adminOnly: true },
     ]
   },
   {

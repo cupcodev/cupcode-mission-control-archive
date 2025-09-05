@@ -32,6 +32,15 @@ export const Team = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('roles');
 
+  // Handle URL tab parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab && ['roles', 'members', 'rules', 'users', 'clients'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, []);
+
   const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
   useEffect(() => {
@@ -317,7 +326,11 @@ export const Team = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setSelectedRole(role.name)}
+                              onClick={() => {
+                                setSelectedRole(role.name);
+                                setActiveTab('members');
+                              }}
+                              title="Ver membros"
                             >
                               <Users className="w-4 h-4" />
                             </Button>
@@ -341,64 +354,88 @@ export const Team = () => {
         </TabsContent>
 
         <TabsContent value="members" className="space-y-4">
-          {selectedRole && (
-            <>
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Membros - {selectedRole}</h2>
-                <Dialog open={addMemberDialog} onOpenChange={setAddMemberDialog}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Membro
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Adicionar Membro ao Papel</DialogTitle>
-                      <DialogDescription>
-                        Busque por email para adicionar um membro
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Email do usuário</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={searchEmail}
-                            onChange={(e) => setSearchEmail(e.target.value)}
-                            placeholder="usuario@exemplo.com"
-                          />
-                          <Button onClick={searchUsers}>Buscar</Button>
-                        </div>
-                      </div>
-                      {searchResults.length > 0 && (
-                        <div className="space-y-2">
-                          <Label>Resultados:</Label>
-                          {searchResults.map((user) => (
-                            <div key={user.id} className="flex justify-between items-center p-2 border rounded">
-                              <div>
-                                <div className="font-medium">{user.display_name || user.email}</div>
-                                <div className="text-sm text-muted-foreground">{user.email}</div>
-                              </div>
-                              <Button
-                                size="sm"
-                                onClick={() => handleAddMember(user.id)}
-                                disabled={roleMembers.some(m => m.user_id === user.id)}
-                              >
-                                {roleMembers.some(m => m.user_id === user.id) ? 'Já é membro' : 'Adicionar'}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Gestão de Membros</h2>
+            <Dialog open={addMemberDialog} onOpenChange={setAddMemberDialog}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Membro
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar Membro a um Papel</DialogTitle>
+                  <DialogDescription>
+                    Selecione o papel e busque por email para adicionar um membro
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Papel</Label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um papel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles.map((role) => (
+                          <SelectItem key={role.name} value={role.name}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Email do usuário</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={searchEmail}
+                        onChange={(e) => setSearchEmail(e.target.value)}
+                        placeholder="usuario@exemplo.com"
+                      />
+                      <Button onClick={searchUsers}>Buscar</Button>
                     </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+                  </div>
+                  {searchResults.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Resultados:</Label>
+                      {searchResults.map((user) => (
+                        <div key={user.id} className="flex justify-between items-center p-2 border rounded">
+                          <div>
+                            <div className="font-medium">{user.display_name || user.email}</div>
+                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleAddMember(user.id)}
+                            disabled={!selectedRole || roleMembers.some(m => m.user_id === user.id)}
+                          >
+                            {roleMembers.some(m => m.user_id === user.id) ? 'Já é membro' : 'Adicionar'}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
 
+          {selectedRole ? (
+            <>
               <Card>
-                <CardContent className="p-0">
-                  <Table>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Membros do papel: {selectedRole}
+                  </CardTitle>
+                  <CardDescription>
+                    Total: {roleMembers.length} membros
+                  </CardDescription>
+                 </CardHeader>
+                 <CardContent className="p-0">
+                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Ordem</TableHead>
@@ -465,6 +502,28 @@ export const Team = () => {
                 </CardContent>
               </Card>
             </>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Selecione um papel</h3>
+                <p className="text-muted-foreground mb-4">
+                  Escolha um papel na aba "Papéis" ou use o dropdown acima para gerenciar membros.
+                </p>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger className="max-w-xs mx-auto">
+                    <SelectValue placeholder="Selecione um papel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.name} value={role.name}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
