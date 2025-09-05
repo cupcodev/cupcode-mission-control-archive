@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,14 +33,26 @@ export const Team = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('roles');
 
-  // Handle URL tab parameter
+  // Handle URL tab parameter and keep tab in sync with URL
+  const location = useLocation();
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
     const tab = urlParams.get('tab');
     if (tab && ['roles', 'members', 'rules', 'users', 'clients'].includes(tab)) {
       setActiveTab(tab);
     }
-  }, []);
+  }, [location.search]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const current = urlParams.get('tab') || 'roles';
+    if (activeTab !== current) {
+      urlParams.set('tab', activeTab);
+      navigate({ pathname: location.pathname, search: urlParams.toString() }, { replace: true });
+    }
+  }, [activeTab, location.pathname, location.search, navigate]);
 
   const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 

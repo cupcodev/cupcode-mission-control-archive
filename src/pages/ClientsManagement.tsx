@@ -8,6 +8,8 @@ import { Plus, Search, Users, Briefcase } from 'lucide-react';
 import { clientsRepo, servicesCatalogRepo, clientServicesRepo } from '@/data/core';
 import { useToast } from '@/hooks/use-toast';
 import { ClientCreateDialog } from '@/components/workflows/ClientCreateDialog';
+import { ClientEditDialog } from '@/components/clients/ClientEditDialog';
+import { ClientServicesDialog } from '@/components/clients/ClientServicesDialog';
 
 export const ClientsManagement = () => {
   const [clients, setClients] = useState<any[]>([]);
@@ -16,6 +18,8 @@ export const ClientsManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [clientDialogOpen, setClientDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<any | null>(null);
+  const [servicesClient, setServicesClient] = useState<any | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -151,10 +155,10 @@ export const ClientsManagement = () => {
               </div>
 
               <div className="flex space-x-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditingClient(client)}>
                   Editar
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setServicesClient(client)}>
                   Serviços
                 </Button>
               </div>
@@ -187,6 +191,20 @@ export const ClientsManagement = () => {
         open={clientDialogOpen}
         onOpenChange={setClientDialogOpen}
         onClientCreated={loadData}
+      />
+
+      <ClientEditDialog
+        open={!!editingClient}
+        client={editingClient}
+        onOpenChange={(open) => { if (!open) setEditingClient(null); }}
+        onSaved={() => { setEditingClient(null); loadData(); }}
+      />
+
+      <ClientServicesDialog
+        open={!!servicesClient}
+        client={servicesClient}
+        onOpenChange={(open) => { if (!open) setServicesClient(null); }}
+        onSaved={() => { setServicesClient(null); loadData(); }}
       />
     </div>
   );
