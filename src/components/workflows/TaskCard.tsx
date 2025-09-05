@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Calendar, AlertTriangle, MoreVertical, ExternalLink, Flag, User } from 'lucide-react';
+import { Calendar, AlertTriangle, MoreVertical, ExternalLink, Flag, User, GripVertical } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from '@/hooks/useAuth';
 import { tasksRepo, type Task } from '@/data/mc';
 import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface TaskCardProps {
   task: Task;
@@ -85,6 +86,8 @@ export const TaskCard = ({ task, isDragging = false, canMove, onClick }: TaskCar
     });
   };
 
+  const { toast: useToastHook } = useToast();
+
   const handleStatusChange = async (newStatus: 'open' | 'in_progress' | 'blocked' | 'done') => {
     try {
       await tasksRepo.update(task.id, { 
@@ -92,12 +95,19 @@ export const TaskCard = ({ task, isDragging = false, canMove, onClick }: TaskCar
         started_at: newStatus === 'in_progress' && !task.started_at ? new Date().toISOString() : task.started_at,
         completed_at: newStatus === 'done' ? new Date().toISOString() : undefined
       });
-      toast.success(`Status atualizado para "${newStatus}"`);
+      useToastHook({
+        title: 'Status atualizado',
+        description: `Status alterado para "${newStatus}".`,
+      });
       // Refresh the board
       window.location.reload();
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
-      toast.error('Não foi possível atualizar o status da tarefa.');
+      useToastHook({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o status da tarefa.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -106,11 +116,18 @@ export const TaskCard = ({ task, isDragging = false, canMove, onClick }: TaskCar
 
     try {
       await tasksRepo.update(task.id, { assignee_user_id: user.id });
-      toast.success('Tarefa atribuída para você');
+      useToastHook({
+        title: 'Tarefa atribuída',
+        description: 'A tarefa foi atribuída para você.',
+      });
       window.location.reload();
     } catch (error) {
       console.error('Erro ao atribuir tarefa:', error);
-      toast.error('Não foi possível atribuir a tarefa. Verifique suas permissões.');
+      useToastHook({
+        title: 'Erro',
+        description: 'Não foi possível atribuir a tarefa. Verifique suas permissões.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -130,67 +147,112 @@ export const TaskCard = ({ task, isDragging = false, canMove, onClick }: TaskCar
     <Card
       ref={setNodeRef}
       style={style}
-      className={`cursor-pointer transition-all hover:shadow-md ${
+      className={`transition-all hover:shadow-md ${
         isDragging || isSortableDragging ? 'opacity-50 rotate-1 scale-105' : ''
-      } ${!canMove ? 'cursor-not-allowed opacity-75' : ''} ${
-        isOverdue ? 'border-red-300' : isDueToday ? 'border-yellow-300' : ''
-      }`}
+      } ${isOverdue ? 'border-red-300' : isDueToday ? 'border-yellow-300' : ''}`}
       {...attributes}
-      {...(canMove ? listeners : {})}
-      onClick={() => {
-        if (!isDragging) {
-          onClick?.();
-        }
-      }}
     >
       <CardContent className="p-3 space-y-3">
-        {/* Header with type, priority and actions */}
+        {/* Header with drag handle, type, priority and actions */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-wrap gap-1">
-            <Badge 
-              variant="outline" 
-              className={`text-xs ${getTypeColor(task.type)}`}
-            >
-              {getTypeLabel(task.type)}
-            </Badge>
-            <Badge 
-              variant="secondary" 
-              className={`text-xs ${getPriorityColor(task.priority)}`}
-            >
-              <Flag className="w-3 h-3 mr-1" />
-              {getPriorityLabel(task.priority)}
-            </Badge>
+          <div className="flex items-center gap-2">
+            {/* Drag handle - only this area triggers drag */}
+            {canMove && (
+              <div 
+                className="cursor-grab active:cursor-grabbing p-1 -m-1 text-muted-foreground hover:text-foreground"
+                {...listeners}
+              >
+                <GripVertical className="h-3 w-3" />
+              </div>
+            )}
+            
+            <div className="flex flex-wrap gap-1">
+              <Badge 
+                variant="outline" 
+                className={`text-xs ${getTypeColor(task.type)}`}
+              >
+                {getTypeLabel(task.type)}
+              </Badge>
+              <Badge 
+                variant="secondary" 
+                className={`text-xs ${getPriorityColor(task.priority)}`}
+              >
+                <Flag className="w-3 h-3 mr-1" />
+                {getPriorityLabel(task.priority)}
+              </Badge>
+            </div>
           </div>
           
           {canEdit && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 w-6 p-0 z-10"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <MoreVertical className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onClick?.(); }}>
+              <DropdownMenuContent align="end" className="z-50 bg-background border shadow-md">
+                <DropdownMenuItem 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    onClick?.(); 
+                  }}
+                  className="cursor-pointer"
+                >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Abrir detalhes
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleStatusChange('open'); }}>
+                <DropdownMenuItem 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    handleStatusChange('open'); 
+                  }}
+                  className="cursor-pointer"
+                >
                   Mover para Aberto
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleStatusChange('in_progress'); }}>
+                <DropdownMenuItem 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    handleStatusChange('in_progress'); 
+                  }}
+                  className="cursor-pointer"
+                >
                   Mover para Em Progresso
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleStatusChange('blocked'); }}>
+                <DropdownMenuItem 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    handleStatusChange('blocked'); 
+                  }}
+                  className="cursor-pointer"
+                >
                   Mover para Bloqueado
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleStatusChange('done'); }}>
+                <DropdownMenuItem 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    handleStatusChange('done'); 
+                  }}
+                  className="cursor-pointer"
+                >
                   Mover para Concluído
                 </DropdownMenuItem>
                 {canAssignToMe() && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAssignToMe(); }}>
+                    <DropdownMenuItem 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        handleAssignToMe(); 
+                      }}
+                      className="cursor-pointer"
+                    >
                       <User className="h-4 w-4 mr-2" />
                       Atribuir para mim
                     </DropdownMenuItem>
@@ -201,50 +263,61 @@ export const TaskCard = ({ task, isDragging = false, canMove, onClick }: TaskCar
           )}
         </div>
 
-        {/* Title */}
-        <h4 className="font-medium text-sm leading-tight line-clamp-2">
-          {task.title}
-        </h4>
+        {/* Clickable content area */}
+        <div 
+          className="cursor-pointer space-y-3"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isDragging && !isSortableDragging) {
+              onClick?.();
+            }
+          }}
+        >
+          {/* Title */}
+          <h4 className="font-medium text-sm leading-tight line-clamp-2">
+            {task.title}
+          </h4>
 
-        {/* Due date */}
-        {task.due_at && (
-          <div className="flex items-center gap-2 text-xs">
-            <Calendar className="h-3 w-3 text-muted-foreground" />
-            <span className={`${isOverdue ? 'text-red-600' : isDueToday ? 'text-yellow-600' : 'text-muted-foreground'}`}>
-              {formatDueDate(task.due_at)}
-            </span>
-            {isOverdue && <Badge variant="destructive" className="text-xs">Atrasada</Badge>}
-            {isDueToday && !isOverdue && <Badge variant="outline" className="text-xs text-yellow-600">Hoje</Badge>}
-          </div>
-        )}
+          {/* Due date */}
+          {task.due_at && (
+            <div className="flex items-center gap-2 text-xs">
+              <Calendar className="h-3 w-3 text-muted-foreground" />
+              <span className={`${isOverdue ? 'text-red-600' : isDueToday ? 'text-yellow-600' : 'text-muted-foreground'}`}>
+                {formatDueDate(task.due_at)}
+              </span>
+              {isOverdue && <Badge variant="destructive" className="text-xs">Atrasada</Badge>}
+              {isDueToday && !isOverdue && <Badge variant="outline" className="text-xs text-yellow-600">Hoje</Badge>}
+            </div>
+          )}
 
-        {/* Assignee and role */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="text-xs">
-                {task.assigned_role?.slice(0, 2).toUpperCase() || 'TA'}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-muted-foreground">
-              {task.assigned_role || 'Sem papel'}
-            </span>
+          {/* Assignee and role */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className="text-xs">
+                  {task.assigned_role?.slice(0, 2).toUpperCase() || 'TA'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-muted-foreground">
+                {task.assigned_role || 'Sem papel'}
+              </span>
+            </div>
+            
+            {task.assignee_user_id === user?.id && (
+              <Badge variant="outline" className="text-xs">
+                Minha
+              </Badge>
+            )}
           </div>
-          
-          {task.assignee_user_id === user?.id && (
-            <Badge variant="outline" className="text-xs">
-              Minha
-            </Badge>
+
+          {/* Status indicator */}
+          {task.status === 'blocked' && (
+            <div className="flex items-center gap-1 text-red-600">
+              <AlertTriangle className="h-3 w-3" />
+              <span className="text-xs">Bloqueada</span>
+            </div>
           )}
         </div>
-
-        {/* Status indicator */}
-        {task.status === 'blocked' && (
-          <div className="flex items-center gap-1 text-red-600">
-            <AlertTriangle className="h-3 w-3" />
-            <span className="text-xs">Bloqueada</span>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
