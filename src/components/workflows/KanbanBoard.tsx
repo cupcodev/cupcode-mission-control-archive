@@ -360,6 +360,7 @@ export const KanbanBoard = ({ instanceId, templateId }: KanbanBoardProps) => {
         taskId={selectedTaskId}
         isOpen={isDrawerOpen}
         onClose={handleCloseDrawer}
+        onUpdate={loadTasks}
       />
 
       <TaskCreateDialog

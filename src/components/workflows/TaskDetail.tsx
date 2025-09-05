@@ -128,18 +128,56 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
       setEditDescription(taskData.fields?.description || '');
       setSelectedDate(taskData.due_at ? new Date(taskData.due_at) : undefined);
       
-      // Mock activity logs for now
-      setActivityLogs([
-        {
+      // Generate activity logs based on task changes
+      const logs = [];
+      
+      if (taskData.started_at) {
+        logs.push({
           id: 1,
           task_id: taskId,
-          actor_user_id: 'current-user',
-          action: 'status_change',
+          actor_user_id: taskData.assignee_user_id || 'system',
+          action: 'iniciou a tarefa',
           before: { status: 'open' },
           after: { status: 'in_progress' },
+          created_at: taskData.started_at
+        });
+      }
+      
+      if (taskData.completed_at) {
+        logs.push({
+          id: 2,
+          task_id: taskId,
+          actor_user_id: taskData.assignee_user_id || 'system',
+          action: 'concluiu a tarefa',
+          before: { status: 'in_progress' },
+          after: { status: 'done' },
+          created_at: taskData.completed_at
+        });
+      }
+      
+      if (taskData.status === 'blocked' && taskData.fields?.block_reason) {
+        logs.push({
+          id: 3,
+          task_id: taskId,
+          actor_user_id: taskData.assignee_user_id || 'system',
+          action: 'bloqueou a tarefa',
+          before: {},
+          after: { status: 'blocked', reason: taskData.fields.block_reason },
           created_at: new Date().toISOString()
-        }
-      ]);
+        });
+      }
+      
+      logs.push({
+        id: 4,
+        task_id: taskId,
+        actor_user_id: taskData.created_by || 'system',
+        action: 'criou a tarefa',
+        before: {},
+        after: { status: 'open' },
+        created_at: taskData.created_at
+      });
+      
+      setActivityLogs(logs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
     } catch (error) {
       console.error('Erro ao carregar tarefa:', error);
       toast({
@@ -160,12 +198,13 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
       await tasksRepo.update(task.id, { 
         fields: { ...task.fields, title: editTitle }
       });
-      setTask({ ...task, title: editTitle });
+      setTask({ ...task, title: editTitle, fields: { ...task.fields, title: editTitle } });
       setIsEditingTitle(false);
       toast({
         title: 'Título atualizado',
         description: 'O título da tarefa foi atualizado com sucesso.',
       });
+      onUpdate?.();
     } catch (error) {
       console.error('Erro ao salvar título:', error);
       toast({
@@ -193,6 +232,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         title: 'Status atualizado',
         description: `Status alterado para "${newStatus}".`,
       });
+      onUpdate?.();
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       toast({
@@ -275,6 +315,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         title: 'Prioridade atualizada',
         description: `Prioridade alterada para ${priority}.`,
       });
+      onUpdate?.();
     } catch (error) {
       console.error('Erro ao atualizar prioridade:', error);
       toast({
@@ -300,6 +341,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         title: 'Data de vencimento atualizada',
         description: date ? `Data alterada para ${format(date, 'dd/MM/yyyy', { locale: ptBR })}` : 'Data removida',
       });
+      onUpdate?.();
     } catch (error) {
       console.error('Erro ao atualizar data:', error);
       toast({
@@ -328,6 +370,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         fields: { ...task.fields, checklist: updatedChecklist }
       });
       setTask({ ...task, fields: { ...task.fields, checklist: updatedChecklist } });
+      onUpdate?.();
     } catch (error) {
       console.error('Erro ao atualizar checklist:', error);
       toast({
@@ -360,6 +403,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         title: 'Tarefa bloqueada',
         description: 'A tarefa foi marcada como bloqueada.',
       });
+      onUpdate?.();
     } catch (error) {
       console.error('Erro ao bloquear tarefa:', error);
       toast({
@@ -391,6 +435,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         title: 'Tarefa desbloqueada',
         description: 'A tarefa foi desbloqueada.',
       });
+      onUpdate?.();
     } catch (error) {
       console.error('Erro ao desbloquear tarefa:', error);
       toast({
@@ -422,6 +467,9 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         title: 'Comentário adicionado',
         description: 'Seu comentário foi publicado.',
       });
+      // Recarregar dados para atualizar histórico
+      loadTaskData();
+      onUpdate?.();
     } catch (error) {
       console.error('Erro ao adicionar comentário:', error);
       toast({
@@ -733,6 +781,13 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
               </Button>
             )}
             
+            {canEdit() && (
+              <Button onClick={handleAutoAssign} disabled={saving} className="w-full" variant="outline">
+                <User className="h-4 w-4 mr-2" />
+                Alterar atribuição
+              </Button>
+            )}
+            
             {task.type === 'approval' && canEdit() && (
               <Button 
                 onClick={() => setShowApprovalDialog(true)} 
@@ -900,18 +955,19 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
                 <Button size="sm" onClick={async () => {
                   try {
                     setSaving(true);
-                    await tasksRepo.update(task.id, { 
-                      fields: { ...task.fields, description: editDescription }
-                    });
-                    setTask({ 
-                      ...task, 
-                      fields: { ...task.fields, description: editDescription }
-                    });
-                    setIsEditingDescription(false);
-                    toast({
-                      title: 'Descrição atualizada',
-                      description: 'A descrição foi atualizada com sucesso.',
-                    });
+                     await tasksRepo.update(task.id, { 
+                       fields: { ...task.fields, description: editDescription }
+                     });
+                     setTask({ 
+                       ...task, 
+                       fields: { ...task.fields, description: editDescription }
+                     });
+                     setIsEditingDescription(false);
+                     toast({
+                       title: 'Descrição atualizada',
+                       description: 'A descrição foi atualizada com sucesso.',
+                     });
+                     onUpdate?.();
                   } catch (error) {
                     toast({
                       title: 'Erro',
@@ -963,7 +1019,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
           <CardTitle className="text-lg flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CheckSquare className="h-5 w-5" />
-              Checklist
+              Subtarefas
               {checklistProgress.total > 0 && (
                 <Badge variant="outline">
                   {checklistProgress.completed}/{checklistProgress.total} ({checklistProgress.percentage}%)
@@ -1000,7 +1056,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
               ))}
             </div>
           ) : (
-            <p className="text-muted-foreground">Nenhum item no checklist.</p>
+            <p className="text-muted-foreground">Nenhuma subtarefa encontrada.</p>
           )}
         </CardContent>
       </Card>
@@ -1111,7 +1167,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
                 <Clock className="h-4 w-4 mt-0.5 text-muted-foreground" />
                 <div className="flex-1">
                   <p className="text-sm">
-                    <span className="font-medium">{profile?.display_name || user?.email || 'Usuário'}</span> alterou {log.action}
+                    <span className="font-medium">{profile?.display_name || user?.email || 'Usuário'}</span> {log.action}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}

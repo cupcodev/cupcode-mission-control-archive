@@ -5,9 +5,10 @@ interface TaskDrawerProps {
   taskId: string | null;
   isOpen: boolean;
   onClose: () => void;
+  onUpdate?: () => void;
 }
 
-export const TaskDrawer = ({ taskId, isOpen, onClose }: TaskDrawerProps) => {
+export const TaskDrawer = ({ taskId, isOpen, onClose, onUpdate }: TaskDrawerProps) => {
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-full max-w-2xl sm:max-w-3xl overflow-y-auto">
@@ -20,6 +21,7 @@ export const TaskDrawer = ({ taskId, isOpen, onClose }: TaskDrawerProps) => {
               taskId={taskId} 
               isDrawer={true} 
               onClose={onClose}
+              onUpdate={onUpdate}
             />
           )}
         </div>
