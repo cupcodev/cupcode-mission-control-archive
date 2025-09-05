@@ -98,9 +98,9 @@ export const ApprovalDecisionDialog = ({
 
   const getDecisionLabel = (decision: string) => {
     switch (decision) {
-      case 'approved': return 'Aprovado';
-      case 'changes_requested': return 'Mudanças Solicitadas';
-      case 'rejected': return 'Rejeitado';
+      case 'approved': return 'Aprovar';
+      case 'changes_requested': return 'Solicitar Mudanças';
+      case 'rejected': return 'Rejeitar';
       default: return decision;
     }
   };
@@ -234,33 +234,61 @@ export const ApprovalDecisionDialog = ({
             {/* Decision Selection */}
             <div className="space-y-3">
               <Label>Decisão</Label>
-              <RadioGroup
-                value={watchedDecision}
-                onValueChange={(value) => form.setValue('decision', value as any)}
-                className="grid grid-cols-1 gap-3"
-              >
-                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50">
-                  <RadioGroupItem value="approved" id="approved" />
-                  <Label htmlFor="approved" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Aprovado
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50">
-                  <RadioGroupItem value="changes_requested" id="changes_requested" />
-                  <Label htmlFor="changes_requested" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                    Solicitar mudanças
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50">
-                  <RadioGroupItem value="rejected" id="rejected" />
-                  <Label htmlFor="rejected" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <XCircle className="h-4 w-4 text-red-600" />
-                    Rejeitado
-                  </Label>
-                </div>
-              </RadioGroup>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => form.setValue('decision', 'approved')}
+                  className={`relative p-4 rounded-lg border transition-all ${
+                    watchedDecision === 'approved' 
+                      ? 'border-green-500 bg-gradient-to-br from-green-50 to-green-100 text-green-700' 
+                      : 'border-border hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <CheckCircle className="h-6 w-6" />
+                    <span className="font-medium">Aprovar</span>
+                  </div>
+                  {watchedDecision === 'approved' && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-lg" />
+                  )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => form.setValue('decision', 'changes_requested')}
+                  className={`relative p-4 rounded-lg border transition-all ${
+                    watchedDecision === 'changes_requested' 
+                      ? 'border-orange-500 bg-gradient-to-br from-orange-50 to-orange-100 text-orange-700' 
+                      : 'border-border hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <AlertTriangle className="h-6 w-6" />
+                    <span className="font-medium">Solicitar Mudanças</span>
+                  </div>
+                  {watchedDecision === 'changes_requested' && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-orange-600/20 rounded-lg" />
+                  )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => form.setValue('decision', 'rejected')}
+                  className={`relative p-4 rounded-lg border transition-all ${
+                    watchedDecision === 'rejected' 
+                      ? 'border-red-500 bg-gradient-to-br from-red-50 to-red-100 text-red-700' 
+                      : 'border-border hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <XCircle className="h-6 w-6" />
+                    <span className="font-medium">Rejeitar</span>
+                  </div>
+                  {watchedDecision === 'rejected' && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-400/20 to-red-600/20 rounded-lg" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Checklist Validation */}
@@ -338,10 +366,16 @@ export const ApprovalDecisionDialog = ({
               <Button 
                 type="submit" 
                 disabled={isSubmitting || !checklistValidation.isValid}
-                className="flex items-center gap-2"
+                className={`flex items-center gap-2 relative overflow-hidden ${
+                  watchedDecision === 'approved' 
+                    ? 'bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' 
+                    : watchedDecision === 'changes_requested'
+                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'
+                    : 'bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+                }`}
               >
                 {getDecisionIcon(watchedDecision)}
-                {isSubmitting ? 'Processando...' : `Confirmar ${getDecisionLabel(watchedDecision)}`}
+                {isSubmitting ? 'Processando...' : `${getDecisionLabel(watchedDecision)}`}
               </Button>
             </div>
           </form>

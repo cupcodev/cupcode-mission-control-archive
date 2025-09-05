@@ -7,76 +7,53 @@ import { CalendarDays, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { format, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { EventCreateDialog } from '@/components/workflows/EventCreateDialog';
-import { tasksRepo } from '@/data/mc/tasksRepo';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock data para demonstração
-const mockEvents = [
-  {
-    id: '1',
-    title: 'Reunião de Planning',
-    type: 'meeting',
-    date: new Date(),
-    time: '09:00',
-    status: 'confirmed',
-    participants: ['João Silva', 'Maria Santos']
-  },
-  {
-    id: '2',
-    title: 'Deadline: Landing Page',
-    type: 'deadline',
-    date: addDays(new Date(), 2),
-    time: '18:00',
-    status: 'pending',
-    project: 'Website Redesign'
-  },
-  {
-    id: '3',
-    title: 'Aprovação: Design System',
-    type: 'approval',
-    date: addDays(new Date(), 1),
-    time: '14:30',
-    status: 'pending',
-    assignee: 'Pedro Costa'
-  },
-  {
-    id: '4',
-    title: 'Release: Mobile App v2.1',
-    type: 'release',
-    date: addDays(new Date(), 5),
-    time: '16:00',
-    status: 'scheduled',
-    project: 'Mobile App Update'
-  }
-];
+interface CalendarEvent {
+  event_id: string;
+  event_type: string;
+  task_id: string;
+  instance_id: string;
+  client_id: string;
+  service_id: string;
+  title: string;
+  start_at: string;
+  end_at: string;
+  all_day: boolean;
+  assignee_user_id?: string;
+  assigned_role?: string;
+  status: string;
+  task_type: string;
+  created_at: string;
+}
 
 const getEventTypeColor = (type: string) => {
   const typeMap = {
-    meeting: 'bg-blue-500',
-    deadline: 'bg-red-500',
-    approval: 'bg-orange-500',
-    release: 'bg-green-500'
+    task_due: 'bg-blue-500',
+    approval_pending: 'bg-orange-500',
+    milestone: 'bg-green-500'
   };
   return typeMap[type as keyof typeof typeMap] || 'bg-gray-500';
 };
 
 const getEventTypeLabel = (type: string) => {
   const typeMap = {
-    meeting: 'Reunião',
-    deadline: 'Prazo',
-    approval: 'Aprovação',
-    release: 'Release'
+    task_due: 'Prazo de Tarefa',
+    approval_pending: 'Aprovação Pendente',
+    milestone: 'Marco'
   };
   return typeMap[type as keyof typeof typeMap] || type;
 };
 
 const getStatusIcon = (status: string) => {
   switch (status) {
-    case 'confirmed':
-    case 'scheduled':
+    case 'done':
       return <CheckCircle className="h-4 w-4 text-green-500" />;
-    case 'pending':
+    case 'open':
+    case 'in_progress':
       return <Clock className="h-4 w-4 text-orange-500" />;
-    case 'overdue':
+    case 'blocked':
+    case 'rejected':
       return <AlertCircle className="h-4 w-4 text-red-500" />;
     default:
       return <CalendarDays className="h-4 w-4 text-muted-foreground" />;
@@ -87,7 +64,7 @@ export const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth] = useState(new Date());
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -96,12 +73,23 @@ export const Calendar = () => {
 
   const loadEvents = async () => {
     try {
-      // Load events from tasks with due dates
-      // This is a simplified approach - in a real app you'd have proper filtering
-      setEvents(mockEvents); // Using mock data for now
+      setLoading(true);
+      const { data, error } = await (supabase as any)
+        .schema('mc')
+        .from('v_calendar_events')
+        .select('*')
+        .order('start_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading calendar events:', error);
+        setEvents([]);
+        return;
+      }
+
+      setEvents(data || []);
     } catch (error) {
       console.error('Error loading events:', error);
-      setEvents(mockEvents);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -109,28 +97,28 @@ export const Calendar = () => {
 
   // Filtrar eventos para o mês atual
   const currentMonthEvents = events.filter(event => {
-    const eventDate = new Date(event.date);
+    const eventDate = new Date(event.start_at);
     return eventDate >= startOfMonth(currentMonth) && eventDate <= endOfMonth(currentMonth);
   });
 
   // Filtrar eventos para o dia selecionado
   const selectedDayEvents = selectedDate 
-    ? events.filter(event => isSameDay(new Date(event.date), selectedDate))
+    ? events.filter(event => isSameDay(new Date(event.start_at), selectedDate))
     : [];
 
   // Eventos próximos (próximos 7 dias)
   const upcomingEvents = events
     .filter(event => {
-      const eventDate = new Date(event.date);
+      const eventDate = new Date(event.start_at);
       const today = new Date();
       const nextWeek = addDays(today, 7);
       return eventDate >= today && eventDate <= nextWeek;
     })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
 
   // Marcar dias com eventos no calendário
   const getDayModifiers = () => {
-    const eventDates = currentMonthEvents.map(event => new Date(event.date));
+    const eventDates = currentMonthEvents.map(event => new Date(event.start_at));
     return {
       hasEvents: eventDates
     };
@@ -203,8 +191,8 @@ export const Calendar = () => {
             <CardContent className="space-y-3">
               {selectedDayEvents.length > 0 ? (
                 selectedDayEvents.map((event) => (
-                  <div key={event.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                    <div className={`w-3 h-3 rounded-full mt-1 ${getEventTypeColor(event.type)}`} />
+                  <div key={event.event_id} className="flex items-start space-x-3 p-3 border rounded-lg">
+                    <div className={`w-3 h-3 rounded-full mt-1 ${getEventTypeColor(event.event_type)}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium text-sm">{event.title}</h4>
@@ -212,13 +200,15 @@ export const Calendar = () => {
                       </div>
                       <div className="flex items-center space-x-2 mt-1">
                         <Badge variant="outline" className="text-xs">
-                          {getEventTypeLabel(event.type)}
+                          {getEventTypeLabel(event.event_type)}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">{event.time}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(event.start_at), 'HH:mm')}
+                        </span>
                       </div>
-                      {event.project && (
+                      {event.assigned_role && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {event.project}
+                          Função: {event.assigned_role}
                         </p>
                       )}
                     </div>
@@ -242,30 +232,37 @@ export const Calendar = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {upcomingEvents.map((event) => (
-                <div key={event.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                  <div className={`w-3 h-3 rounded-full mt-1 ${getEventTypeColor(event.type)}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm">{event.title}</h4>
-                      {getStatusIcon(event.status)}
+              {upcomingEvents.length > 0 ? (
+                upcomingEvents.map((event) => (
+                  <div key={event.event_id} className="flex items-start space-x-3 p-3 border rounded-lg">
+                    <div className={`w-3 h-3 rounded-full mt-1 ${getEventTypeColor(event.event_type)}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">{event.title}</h4>
+                        {getStatusIcon(event.status)}
+                      </div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {getEventTypeLabel(event.event_type)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(event.start_at), "dd/MM 'às' HH:mm")}
+                        </span>
+                      </div>
+                      {event.assigned_role && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Função: {event.assigned_role}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {getEventTypeLabel(event.type)}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(event.date), "dd/MM")} às {event.time}
-                      </span>
-                    </div>
-                    {event.project && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {event.project}
-                      </p>
-                    )}
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  <CalendarDays className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Nenhum evento próximo</p>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>
