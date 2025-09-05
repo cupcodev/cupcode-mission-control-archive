@@ -131,6 +131,8 @@ export const ClientManagement = () => {
   const loadClients = async () => {
     try {
       setLoading(true);
+      // Simula um pequeno delay para mostrar loading
+      await new Promise(resolve => setTimeout(resolve, 500));
       const data = await clientsRepo.list();
       setClients(data);
     } catch (error: any) {

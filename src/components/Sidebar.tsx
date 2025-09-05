@@ -19,12 +19,14 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useApprovalCount } from '@/hooks/useApprovalCount';
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  dynamicBadge?: boolean;
   adminOnly?: boolean;
   submenu?: Array<{
     name: string;
@@ -58,7 +60,7 @@ const navigation: NavItem[] = [
     name: 'Aprovações',
     href: '/app/approvals',
     icon: CheckSquare,
-    badge: '3',
+    dynamicBadge: true,
   },
   {
     name: 'Workflows',
@@ -110,6 +112,7 @@ export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { profile } = useAuth();
+  const { count: approvalCount } = useApprovalCount();
 
   const userRole = profile?.role || 'user';
   const isAdmin = userRole === 'admin' || userRole === 'superadmin';
@@ -182,6 +185,11 @@ export const Sidebar = () => {
                   {item.badge && !item.adminOnly && (
                     <Badge variant="secondary" className="text-xs ml-1">
                       {item.badge}
+                    </Badge>
+                  )}
+                  {item.dynamicBadge && approvalCount > 0 && !item.adminOnly && (
+                    <Badge variant="secondary" className="text-xs ml-1">
+                      {approvalCount}
                     </Badge>
                   )}
                 </>

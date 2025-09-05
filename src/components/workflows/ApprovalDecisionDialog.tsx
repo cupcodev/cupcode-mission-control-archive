@@ -138,10 +138,20 @@ export const ApprovalDecisionDialog = ({
     try {
       const { user } = useAuth();
       
+      if (!user?.id) {
+        toast({
+          title: "Erro de autenticação",
+          description: "Usuário não encontrado. Faça login novamente.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Save approval decision
       await approvalsRepo.create({
         task_id: task.id,
-        approver_user_id: user?.id || '',
+        approver_user_id: user.id,
         decision: data.decision,
         reason: data.reason || undefined,
         artifacts: artifacts.filter(a => a.name && a.url)
@@ -234,11 +244,11 @@ export const ApprovalDecisionDialog = ({
             {/* Decision Selection */}
             <div className="space-y-3">
               <Label>Decisão</Label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => form.setValue('decision', 'approved')}
-                  className={`relative p-4 rounded-lg border transition-all ${
+                  className={`flex-1 relative p-4 rounded-lg border transition-all ${
                     watchedDecision === 'approved' 
                       ? 'border-green-500 bg-gradient-to-br from-green-50 to-green-100 text-green-700' 
                       : 'border-border hover:bg-muted/50'
@@ -256,7 +266,7 @@ export const ApprovalDecisionDialog = ({
                 <button
                   type="button"
                   onClick={() => form.setValue('decision', 'changes_requested')}
-                  className={`relative p-4 rounded-lg border transition-all ${
+                  className={`flex-1 relative p-4 rounded-lg border transition-all ${
                     watchedDecision === 'changes_requested' 
                       ? 'border-orange-500 bg-gradient-to-br from-orange-50 to-orange-100 text-orange-700' 
                       : 'border-border hover:bg-muted/50'
@@ -274,7 +284,7 @@ export const ApprovalDecisionDialog = ({
                 <button
                   type="button"
                   onClick={() => form.setValue('decision', 'rejected')}
-                  className={`relative p-4 rounded-lg border transition-all ${
+                  className={`flex-1 relative p-4 rounded-lg border transition-all ${
                     watchedDecision === 'rejected' 
                       ? 'border-red-500 bg-gradient-to-br from-red-50 to-red-100 text-red-700' 
                       : 'border-border hover:bg-muted/50'
@@ -366,7 +376,7 @@ export const ApprovalDecisionDialog = ({
               <Button 
                 type="submit" 
                 disabled={isSubmitting || !checklistValidation.isValid}
-                className={`flex items-center gap-2 relative overflow-hidden ${
+                className={`flex items-center gap-2 relative overflow-hidden text-white ${
                   watchedDecision === 'approved' 
                     ? 'bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' 
                     : watchedDecision === 'changes_requested'

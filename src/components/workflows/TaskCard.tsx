@@ -40,9 +40,9 @@ export const TaskCard = ({ task, isDragging = false, canMove, onClick }: TaskCar
   };
 
   const getPriorityColor = (priority: number) => {
-    if (priority >= 4) return 'text-red-600 bg-red-100';
-    if (priority >= 2) return 'text-yellow-600 bg-yellow-100';
-    return 'text-green-600 bg-green-100';
+    if (priority >= 4) return 'text-red-600 bg-gradient-to-br from-red-100 to-red-200 border-red-300';
+    if (priority >= 2) return 'text-yellow-600 bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-300';
+    return 'text-green-600 bg-gradient-to-br from-green-100 to-green-200 border-green-300';
   };
 
   const getPriorityLabel = (priority: number) => {
@@ -53,10 +53,10 @@ export const TaskCard = ({ task, isDragging = false, canMove, onClick }: TaskCar
 
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
-      task: 'bg-blue-500/10 text-blue-700 border-blue-200',
-      approval: 'bg-orange-500/10 text-orange-700 border-orange-200',
-      form: 'bg-green-500/10 text-green-700 border-green-200',
-      automation: 'bg-purple-500/10 text-purple-700 border-purple-200'
+      task: 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 border-blue-300',
+      approval: 'bg-gradient-to-br from-orange-100 to-orange-200 text-orange-700 border-orange-300',
+      form: 'bg-gradient-to-br from-green-100 to-green-200 text-green-700 border-green-300',
+      automation: 'bg-gradient-to-br from-purple-100 to-purple-200 text-purple-700 border-purple-300'
     };
     return colors[type] || colors.task;
   };
