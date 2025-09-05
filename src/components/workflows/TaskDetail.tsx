@@ -316,10 +316,10 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
     if (!task || !canEdit()) return;
     
     try {
-      const checklist = (task.fields?.checklist || []) as ChecklistItem[];
+      const checklist = (task?.fields?.checklist || []) as Array<{id: string, text: string, completed: boolean}>;
       const updatedChecklist = checklist.map(item => 
         item.id === itemId 
-          ? { ...item, done: !item.done, updated_at: new Date().toISOString() }
+          ? { ...item, completed: !item.completed, updated_at: new Date().toISOString() }
           : item
       );
       
@@ -472,9 +472,9 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
   };
 
   const getChecklistProgress = () => {
-    const checklist = (task?.fields?.checklist || []) as ChecklistItem[];
+    const checklist = (task?.fields?.checklist || []) as Array<{id: string, text: string, completed: boolean}>;
     const total = checklist.length;
-    const completed = checklist.filter(item => item.done).length;
+    const completed = checklist.filter(item => item.completed).length;
     return { completed, total, percentage: total > 0 ? Math.round((completed / total) * 100) : 0 };
   };
 
@@ -975,7 +975,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         <CardContent>
           {checklistProgress.total > 0 ? (
             <div className="space-y-2">
-              {((task.fields?.checklist || []) as ChecklistItem[]).map((item) => (
+              {((task.fields?.checklist || []) as Array<{id: string, text: string, completed: boolean}>).map((item) => (
                 <div key={item.id} className="flex items-center gap-2">
                   <Button
                     variant="ghost"
@@ -984,7 +984,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
                     disabled={!canEdit() || saving}
                     className="p-0 h-auto"
                   >
-                    {item.done ? (
+                    {item.completed ? (
                       <CheckSquare className="h-4 w-4 text-green-600" />
                     ) : (
                       <Square className="h-4 w-4" />
@@ -992,10 +992,9 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
                   </Button>
                   <span className={cn(
                     "flex-1",
-                    item.done && "line-through text-muted-foreground"
+                    item.completed && "line-through text-muted-foreground"
                   )}>
-                    {item.label}
-                    {item.required && <span className="text-red-500 ml-1">*</span>}
+                    {item.text}
                   </span>
                 </div>
               ))}
@@ -1058,7 +1057,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
                   <Avatar className="h-6 w-6">
                     <AvatarFallback className="text-xs">US</AvatarFallback>
                   </Avatar>
-                  <span className="font-medium text-sm">Usuário</span>
+                  <span className="font-medium text-sm">{profile?.display_name || user?.email || 'Usuário'}</span>
                   <span className="text-xs text-muted-foreground">
                     {format(new Date(comment.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                   </span>
@@ -1112,7 +1111,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
                 <Clock className="h-4 w-4 mt-0.5 text-muted-foreground" />
                 <div className="flex-1">
                   <p className="text-sm">
-                    <span className="font-medium">Usuário</span> alterou {log.action}
+                    <span className="font-medium">{profile?.display_name || user?.email || 'Usuário'}</span> alterou {log.action}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}

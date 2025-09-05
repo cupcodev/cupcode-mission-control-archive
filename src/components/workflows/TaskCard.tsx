@@ -137,7 +137,11 @@ export const TaskCard = ({ task, isDragging = false, canMove, onClick }: TaskCar
       }`}
       {...attributes}
       {...(canMove ? listeners : {})}
-      onClick={() => !isDragging && onClick?.()}
+      onClick={() => {
+        if (!isDragging) {
+          onClick?.();
+        }
+      }}
     >
       <CardContent className="p-3 space-y-3">
         {/* Header with type, priority and actions */}

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, Plus, X } from 'lucide-react';
+import { RoleSelect } from './RoleSelect';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { tasksRepo, templatesRepo } from '@/data/mc';
@@ -55,7 +56,8 @@ export const TaskCreateDialog = ({
     assignedRole: '',
     assigneeUserId: '',
     slaHours: '',
-    blockReason: ''
+    blockReason: '',
+    isBlocked: false
   });
 
   useEffect(() => {
@@ -150,7 +152,7 @@ export const TaskCreateDialog = ({
         fields.checklist = checklistItems;
       }
       
-      if (formData.blockReason.trim()) {
+      if (formData.isBlocked && formData.blockReason.trim()) {
         fields.block_reason = formData.blockReason.trim();
       }
 
@@ -159,7 +161,7 @@ export const TaskCreateDialog = ({
         node_id: nodeId,
         type: formData.type,
         title: formData.title.trim(),
-        status: formData.blockReason.trim() ? 'blocked' : 'open',
+        status: formData.isBlocked ? 'blocked' : 'open',
         priority: formData.priority,
         assigned_role: formData.assignedRole || undefined,
         assignee_user_id: formData.assigneeUserId || undefined,
@@ -199,7 +201,8 @@ export const TaskCreateDialog = ({
       assignedRole: '',
       assigneeUserId: '',
       slaHours: '',
-      blockReason: ''
+      blockReason: '',
+      isBlocked: false
     });
     setChecklistItems([]);
     setNewChecklistItem('');
@@ -319,24 +322,95 @@ export const TaskCreateDialog = ({
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="priority">Prioridade (1-5)</Label>
-              <Input
-                id="priority"
-                type="number"
-                min="1"
-                max="5"
-                value={formData.priority}
-                onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) || 3 }))}
-              />
+              <Label htmlFor="priority">Prioridade</Label>
+              <div className="space-y-2">
+                <input
+                  id="priority"
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={formData.priority}
+                  onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) }))}
+                  className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, 
+                      ${formData.priority >= 5 ? '#059669' : '#e5e7eb'} 0%, 
+                      ${formData.priority >= 5 ? '#059669' : '#e5e7eb'} 20%,
+                      ${formData.priority >= 4 ? '#22c55e' : '#e5e7eb'} 20%, 
+                      ${formData.priority >= 4 ? '#22c55e' : '#e5e7eb'} 40%,
+                      ${formData.priority >= 3 ? '#eab308' : '#e5e7eb'} 40%, 
+                      ${formData.priority >= 3 ? '#eab308' : '#e5e7eb'} 60%,
+                      ${formData.priority >= 2 ? '#f97316' : '#e5e7eb'} 60%, 
+                      ${formData.priority >= 2 ? '#f97316' : '#e5e7eb'} 80%,
+                      ${formData.priority >= 1 ? '#dc2626' : '#e5e7eb'} 80%, 
+                      ${formData.priority >= 1 ? '#dc2626' : '#e5e7eb'} 100%)`
+                  }}
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                </div>
+                <div className="text-sm">
+                  {formData.priority === 5 && (
+                    <div>
+                      <span className="font-medium text-green-800">5 - Planejada</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ideias, backlog estratégico, experimentos, "nice to have" sem prazo. 
+                        Ex.: prova de conceito, otimização futura, documentação ampliada.
+                        <br />SLA típico: sem data fixa; priorizar conforme roadmap.
+                      </p>
+                    </div>
+                  )}
+                  {formData.priority === 4 && (
+                    <div>
+                      <span className="font-medium text-green-600">4 - Baixa</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Aprimoramento, débito técnico não crítico, ajustes de UX/conteúdo. 
+                        Ex.: microcopys, pequenos refactors, melhorias de acessibilidade sem bloqueio.
+                        <br />SLA típico: resolver neste mês/sprint.
+                      </p>
+                    </div>
+                  )}
+                  {formData.priority === 3 && (
+                    <div>
+                      <span className="font-medium text-yellow-600">3 - Média</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Impacto moderado, há workaround. Ex.: componente visual quebrado sem bloquear uso; 
+                        melhoria que destrava dependência de outra equipe.
+                        <br />SLA típico: resolver nesta semana.
+                      </p>
+                    </div>
+                  )}
+                  {formData.priority === 2 && (
+                    <div>
+                      <span className="font-medium text-orange-600">2 - Alta</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Impacto relevante ou risco de virada em Crítica se adiar. Ex.: bug que impede compra em um fluxo alternativo; 
+                        falha em integração-chave; tarefa com prazo legal.
+                        <br />SLA típico: iniciar no mesmo dia; resolver em 24–48h.
+                      </p>
+                    </div>
+                  )}
+                  {formData.priority === 1 && (
+                    <div>
+                      <span className="font-medium text-red-600">1 - Crítica</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Interrompe operação, causa perda financeira/reputacional imediata ou afeta muitos usuários. 
+                        Ex.: checkout fora do ar, vazamento de dados, queda geral.
+                        <br />SLA típico: iniciar em até 15 min; resolver/mitigar no mesmo dia.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div>
               <Label htmlFor="assignedRole">Função responsável</Label>
-              <Input
-                id="assignedRole"
+              <RoleSelect
                 value={formData.assignedRole}
-                onChange={(e) => setFormData(prev => ({ ...prev, assignedRole: e.target.value }))}
-                placeholder="Ex: Desenvolvedor, Designer..."
+                onValueChange={(value) => setFormData(prev => ({ ...prev, assignedRole: value }))}
+                placeholder="Selecione uma função..."
+                disabled={formData.mode === 'node'}
               />
             </div>
           </div>
@@ -376,25 +450,42 @@ export const TaskCreateDialog = ({
             </div>
           </div>
 
-          {/* Motivo de bloqueio */}
-          <div>
-            <Label htmlFor="blockReason">Motivo de bloqueio (opcional)</Label>
-            <Textarea
-              id="blockReason"
-              value={formData.blockReason}
-              onChange={(e) => setFormData(prev => ({ ...prev, blockReason: e.target.value }))}
-              placeholder="Se preenchido, a tarefa será criada como 'bloqueada'..."
+          {/* Bloqueio da tarefa */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="isBlocked"
+              checked={formData.isBlocked}
+              onCheckedChange={(checked) => setFormData(prev => ({ 
+                ...prev, 
+                isBlocked: !!checked,
+                blockReason: checked ? prev.blockReason : ''
+              }))}
             />
+            <Label htmlFor="isBlocked">Bloquear tarefa</Label>
           </div>
 
-          {/* Checklist */}
+          {/* Motivo de bloqueio - só aparece se bloqueado */}
+          {formData.isBlocked && (
+            <div>
+              <Label htmlFor="blockReason">Motivo de bloqueio *</Label>
+              <Textarea
+                id="blockReason"
+                value={formData.blockReason}
+                onChange={(e) => setFormData(prev => ({ ...prev, blockReason: e.target.value }))}
+                placeholder="Descreva o motivo do bloqueio..."
+                required
+              />
+            </div>
+          )}
+
+          {/* Subtarefas */}
           <div>
-            <Label>Checklist inicial (opcional)</Label>
+            <Label>Subtarefas:</Label>
             <div className="flex items-center space-x-2 mt-2">
               <Input
                 value={newChecklistItem}
                 onChange={(e) => setNewChecklistItem(e.target.value)}
-                placeholder="Adicionar item..."
+                placeholder='Adicionar item e aperte "Enter" ou no botão "+" ao lado.'
                 onKeyPress={(e) => e.key === 'Enter' && addChecklistItem()}
               />
               <Button type="button" size="sm" onClick={addChecklistItem}>
