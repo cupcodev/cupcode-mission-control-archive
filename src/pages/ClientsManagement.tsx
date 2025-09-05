@@ -37,18 +37,28 @@ export const ClientsManagement = () => {
       setClients(clientsData);
       setServices(servicesData);
 
-      // Load contracted services per client (removes mock data)
+      // Load contracted services per client with batching for performance
       const map: Record<string, any[]> = {};
-      await Promise.all(
-        (clientsData || []).map(async (c: any) => {
-          try {
-            const list = await clientServicesRepo.listByClient(c.id);
-            map[c.id] = list;
-          } catch (e) {
-            map[c.id] = [];
-          }
-        })
-      );
+      const batchSize = 5;
+      const clientBatches = [];
+      
+      for (let i = 0; i < (clientsData || []).length; i += batchSize) {
+        clientBatches.push((clientsData || []).slice(i, i + batchSize));
+      }
+      
+      for (const batch of clientBatches) {
+        await Promise.all(
+          batch.map(async (c: any) => {
+            try {
+              const list = await clientServicesRepo.listByClient(c.id);
+              map[c.id] = list;
+            } catch (e) {
+              map[c.id] = [];
+            }
+          })
+        );
+      }
+      
       setServicesByClient(map);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);

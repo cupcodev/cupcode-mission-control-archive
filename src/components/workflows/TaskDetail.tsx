@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { tasksRepo, approvalsRepo, type Task, type Comment, type ActivityLog, type Approval } from '@/data/mc';
 import { ApprovalDecisionDialog } from './ApprovalDecisionDialog';
+import { SubtaskCreateDialog } from './SubtaskCreateDialog';
 import { cn } from '@/lib/utils';
 
 interface TaskDetailProps {
@@ -81,6 +82,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
   // Approval state
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [showSubtaskDialog, setShowSubtaskDialog] = useState(false);
 
   const canEdit = () => {
     if (!user || !profile) return false;
@@ -765,16 +767,16 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
                       className="w-full h-2 rounded-lg appearance-none cursor-pointer"
                       style={{
                         background: `linear-gradient(to right, 
-                          ${task.priority >= 1 ? '#dc2626' : '#e5e7eb'} 0%, 
-                          ${task.priority >= 1 ? '#dc2626' : '#e5e7eb'} 20%,
-                          ${task.priority >= 2 ? '#f97316' : '#e5e7eb'} 20%, 
-                          ${task.priority >= 2 ? '#f97316' : '#e5e7eb'} 40%,
+                          ${task.priority >= 5 ? '#059669' : '#e5e7eb'} 0%, 
+                          ${task.priority >= 5 ? '#059669' : '#e5e7eb'} 20%,
+                          ${task.priority >= 4 ? '#22c55e' : '#e5e7eb'} 20%, 
+                          ${task.priority >= 4 ? '#22c55e' : '#e5e7eb'} 40%,
                           ${task.priority >= 3 ? '#eab308' : '#e5e7eb'} 40%, 
                           ${task.priority >= 3 ? '#eab308' : '#e5e7eb'} 60%,
-                          ${task.priority >= 4 ? '#22c55e' : '#e5e7eb'} 60%, 
-                          ${task.priority >= 4 ? '#22c55e' : '#e5e7eb'} 80%,
-                          ${task.priority >= 5 ? '#059669' : '#e5e7eb'} 80%, 
-                          ${task.priority >= 5 ? '#059669' : '#e5e7eb'} 100%)`
+                          ${task.priority >= 2 ? '#f97316' : '#e5e7eb'} 60%, 
+                          ${task.priority >= 2 ? '#f97316' : '#e5e7eb'} 80%,
+                          ${task.priority >= 1 ? '#dc2626' : '#e5e7eb'} 80%, 
+                          ${task.priority >= 1 ? '#dc2626' : '#e5e7eb'} 100%)`
                       }}
                     />
                     <div className="flex justify-between text-xs text-muted-foreground">
@@ -1209,6 +1211,16 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
                 </Badge>
               )}
             </div>
+            {canEdit() && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowSubtaskDialog(true)}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Adicionar Subtarefa
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -1382,6 +1394,20 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
           onComplete={() => {
             setShowApprovalDialog(false);
             loadTaskData(); // Reload all data including approvals
+          }}
+        />
+      )}
+      
+      {/* Subtask Create Dialog */}
+      {task && showSubtaskDialog && (
+        <SubtaskCreateDialog
+          task={task}
+          isOpen={showSubtaskDialog}
+          onClose={() => setShowSubtaskDialog(false)}
+          onCreated={(updatedTask) => {
+            setTask(updatedTask);
+            setShowSubtaskDialog(false);
+            onUpdate?.();
           }}
         />
       )}

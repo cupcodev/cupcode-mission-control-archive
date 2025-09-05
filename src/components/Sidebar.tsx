@@ -47,7 +47,7 @@ const navigation: NavItem[] = [
     icon: FolderKanban,
   },
   {
-    name: 'Clientes',
+    name: 'Portal do Cliente',
     href: '/app/clients',
     icon: UserCheck,
   },

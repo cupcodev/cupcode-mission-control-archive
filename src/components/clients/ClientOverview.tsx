@@ -246,6 +246,7 @@ export const ClientOverview = () => {
               <Users className="h-6 w-6" />
               {decodeURIComponent(clientId!)}
             </h1>
+            <p className="text-sm text-muted-foreground">ID: {decodeURIComponent(clientId!)}</p>
             <p className="text-muted-foreground">Portal do Cliente</p>
           </div>
         </div>

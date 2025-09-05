@@ -333,17 +333,17 @@ export const TaskCreateDialog = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) }))}
                   className="w-full h-2 rounded-lg appearance-none cursor-pointer"
                   style={{
-                    background: `linear-gradient(to right, 
-                      ${formData.priority >= 5 ? '#059669' : '#e5e7eb'} 0%, 
-                      ${formData.priority >= 5 ? '#059669' : '#e5e7eb'} 20%,
-                      ${formData.priority >= 4 ? '#22c55e' : '#e5e7eb'} 20%, 
-                      ${formData.priority >= 4 ? '#22c55e' : '#e5e7eb'} 40%,
-                      ${formData.priority >= 3 ? '#eab308' : '#e5e7eb'} 40%, 
-                      ${formData.priority >= 3 ? '#eab308' : '#e5e7eb'} 60%,
-                      ${formData.priority >= 2 ? '#f97316' : '#e5e7eb'} 60%, 
-                      ${formData.priority >= 2 ? '#f97316' : '#e5e7eb'} 80%,
-                      ${formData.priority >= 1 ? '#dc2626' : '#e5e7eb'} 80%, 
-                      ${formData.priority >= 1 ? '#dc2626' : '#e5e7eb'} 100%)`
+                     background: `linear-gradient(to right, 
+                       ${formData.priority >= 5 ? '#059669' : '#e5e7eb'} 0%, 
+                       ${formData.priority >= 5 ? '#059669' : '#e5e7eb'} 20%,
+                       ${formData.priority >= 4 ? '#22c55e' : '#e5e7eb'} 20%, 
+                       ${formData.priority >= 4 ? '#22c55e' : '#e5e7eb'} 40%,
+                       ${formData.priority >= 3 ? '#eab308' : '#e5e7eb'} 40%, 
+                       ${formData.priority >= 3 ? '#eab308' : '#e5e7eb'} 60%,
+                       ${formData.priority >= 2 ? '#f97316' : '#e5e7eb'} 60%, 
+                       ${formData.priority >= 2 ? '#f97316' : '#e5e7eb'} 80%,
+                       ${formData.priority >= 1 ? '#dc2626' : '#e5e7eb'} 80%, 
+                       ${formData.priority >= 1 ? '#dc2626' : '#e5e7eb'} 100%)`
                   }}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
