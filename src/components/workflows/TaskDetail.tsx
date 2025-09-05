@@ -61,6 +61,12 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
   const [editTitle, setEditTitle] = useState('');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editDescription, setEditDescription] = useState('');
+  const [isEditingDueDate, setIsEditingDueDate] = useState(false);
+  const [editDueDate, setEditDueDate] = useState('');
+  const [isEditingRole, setIsEditingRole] = useState(false);
+  const [editRole, setEditRole] = useState('');
+  const [isEditingSLA, setIsEditingSLA] = useState(false);
+  const [editSLA, setEditSLA] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date>();
   
   // Comment state
@@ -124,6 +130,9 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
       setComments(commentsData);
       setEditTitle(taskData.title);
       setEditDescription(taskData.fields?.description || '');
+      setEditDueDate(taskData.due_at ? format(new Date(taskData.due_at), 'yyyy-MM-dd\'T\'HH:mm') : '');
+      setEditRole(taskData.assigned_role || '');
+      setEditSLA(taskData.sla_hours?.toString() || '');
       setSelectedDate(taskData.due_at ? new Date(taskData.due_at) : undefined);
       
       // Load real activity logs from database
@@ -671,7 +680,61 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm text-muted-foreground">Papel</Label>
-                <p className="font-medium">{task.assigned_role || 'Não definido'}</p>
+                {isEditingRole && canEdit() ? (
+                  <div className="space-y-1">
+                    <Input
+                      value={editRole}
+                      onChange={(e) => setEditRole(e.target.value)}
+                      placeholder="Digite a função responsável..."
+                    />
+                    <div className="flex gap-1">
+                      <Button size="sm" onClick={async () => {
+                        try {
+                          setSaving(true);
+                          await tasksRepo.update(task.id, { assigned_role: editRole });
+                          setTask({ ...task, assigned_role: editRole });
+                          setIsEditingRole(false);
+                          toast({
+                            title: 'Função atualizada',
+                            description: 'A função responsável foi atualizada com sucesso.',
+                          });
+                          onUpdate?.();
+                          setTimeout(() => loadTaskData(), 500);
+                        } catch (error) {
+                          console.error('Erro ao salvar função:', error);
+                          toast({
+                            title: 'Erro',
+                            description: 'Não foi possível atualizar a função.',
+                            variant: 'destructive',
+                          });
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}>
+                        <Save className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setIsEditingRole(false);
+                        setEditRole(task.assigned_role || '');
+                      }}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{task.assigned_role || 'Não definido'}</p>
+                    {canEdit() && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIsEditingRole(true)}
+                      >
+                        <Edit3 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <Label className="text-sm text-muted-foreground">Responsável</Label>
@@ -759,49 +822,133 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
               </div>
             </div>
 
-            <div>
-              <Label className="text-sm text-muted-foreground">Data de vencimento</Label>
-              {canEdit() ? (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {selectedDate ? (
-                        format(selectedDate, "dd/MM/yyyy", { locale: ptBR })
-                      ) : (
-                        <span>Selecionar data</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarPicker
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={handleDateChange}
-                      initialFocus
-                      className="pointer-events-auto"
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm text-muted-foreground">Data de vencimento</Label>
+                {isEditingDueDate && canEdit() ? (
+                  <div className="space-y-1">
+                    <Input
+                      type="datetime-local"
+                      value={editDueDate}
+                      onChange={(e) => setEditDueDate(e.target.value)}
                     />
-                  </PopoverContent>
-                </Popover>
-              ) : (
-                <p className="font-medium">
-                  {task.due_at ? format(new Date(task.due_at), "dd/MM/yyyy", { locale: ptBR }) : 'Não definida'}
-                </p>
-              )}
+                    <div className="flex gap-1">
+                      <Button size="sm" onClick={async () => {
+                        try {
+                          setSaving(true);
+                          await tasksRepo.update(task.id, { 
+                            due_at: editDueDate ? new Date(editDueDate).toISOString() : null 
+                          });
+                          setTask({ 
+                            ...task, 
+                            due_at: editDueDate ? new Date(editDueDate).toISOString() : undefined
+                          });
+                          setIsEditingDueDate(false);
+                          toast({
+                            title: 'Data de vencimento atualizada',
+                            description: 'A data de vencimento foi atualizada com sucesso.',
+                          });
+                          onUpdate?.();
+                          setTimeout(() => loadTaskData(), 500);
+                        } catch (error) {
+                          console.error('Erro ao salvar data de vencimento:', error);
+                          toast({
+                            title: 'Erro',
+                            description: 'Não foi possível atualizar a data de vencimento.',
+                            variant: 'destructive',
+                          });
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}>
+                        <Save className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setIsEditingDueDate(false);
+                        setEditDueDate(task.due_at ? format(new Date(task.due_at), 'yyyy-MM-dd\'T\'HH:mm') : '');
+                      }}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm">{task.due_at ? format(new Date(task.due_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Não definida'}</p>
+                    {canEdit() && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIsEditingDueDate(true)}
+                      >
+                        <Edit3 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {task.sla_hours && (
-              <div>
-                <Label className="text-sm text-muted-foreground">SLA</Label>
-                <p className="font-medium">{task.sla_hours} horas</p>
-              </div>
-            )}
+            <div>
+              <Label className="text-sm text-muted-foreground">SLA</Label>
+              {isEditingSLA && canEdit() ? (
+                <div className="space-y-1">
+                  <Input
+                    type="number"
+                    value={editSLA}
+                    onChange={(e) => setEditSLA(e.target.value)}
+                    placeholder="Horas de SLA..."
+                    min="1"
+                  />
+                  <div className="flex gap-1">
+                    <Button size="sm" onClick={async () => {
+                      try {
+                        setSaving(true);
+                        const slaHours = parseInt(editSLA);
+                        await tasksRepo.update(task.id, { sla_hours: slaHours });
+                        setTask({ ...task, sla_hours: slaHours });
+                        setIsEditingSLA(false);
+                        toast({
+                          title: 'SLA atualizado',
+                          description: 'O SLA foi atualizado com sucesso.',
+                        });
+                        onUpdate?.();
+                        setTimeout(() => loadTaskData(), 500);
+                      } catch (error) {
+                        console.error('Erro ao salvar SLA:', error);
+                        toast({
+                          title: 'Erro',
+                          description: 'Não foi possível atualizar o SLA.',
+                          variant: 'destructive',
+                        });
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}>
+                      <Save className="h-3 w-3" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      setIsEditingSLA(false);
+                      setEditSLA(task.sla_hours?.toString() || '');
+                    }}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{task.sla_hours || 0} horas</p>
+                  {canEdit() && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setIsEditingSLA(true)}
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -1232,7 +1379,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
           task={task}
           isOpen={showApprovalDialog}
           onClose={() => setShowApprovalDialog(false)}
-          onDecisionMade={() => {
+          onComplete={() => {
             setShowApprovalDialog(false);
             loadTaskData(); // Reload all data including approvals
           }}

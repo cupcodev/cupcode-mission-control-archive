@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, AlertTriangle, Plus, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { Task } from '@/types/mc';
+import { useAuth } from '@/hooks/useAuth';
 import { tasksRepo } from '@/data/mc';
 import { approvalsRepo } from '@/data/mc/approvalsRepo';
 import { branchingService } from '@/lib/branching-service';
@@ -32,14 +33,14 @@ interface ApprovalDecisionDialogProps {
   task: Task;
   isOpen: boolean;
   onClose: () => void;
-  onDecisionMade?: () => void;
+  onComplete?: () => void;
 }
 
 export const ApprovalDecisionDialog = ({ 
   task, 
   isOpen, 
   onClose, 
-  onDecisionMade 
+  onComplete 
 }: ApprovalDecisionDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [artifacts, setArtifacts] = useState<Array<{ name: string; url: string }>>([]);
@@ -135,10 +136,12 @@ export const ApprovalDecisionDialog = ({
     setIsSubmitting(true);
 
     try {
+      const { user } = useAuth();
+      
       // Save approval decision
       await approvalsRepo.create({
         task_id: task.id,
-        approver_user_id: 'current-user', // Will be replaced with auth.uid()
+        approver_user_id: user?.id || '',
         decision: data.decision,
         reason: data.reason || undefined,
         artifacts: artifacts.filter(a => a.name && a.url)
@@ -197,7 +200,7 @@ export const ApprovalDecisionDialog = ({
         description: successMessage
       });
 
-      onDecisionMade?.();
+      onComplete?.();
       onClose();
     } catch (error) {
       toast({

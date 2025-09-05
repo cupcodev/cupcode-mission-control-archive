@@ -214,6 +214,24 @@ class TasksRepository {
         });
       }
 
+      // Check for role changes
+      if (before.assigned_role !== after.assigned_role) {
+        changes.push({
+          action: `alterou função de "${before.assigned_role || 'não definida'}" para "${after.assigned_role || 'não definida'}"`,
+          before: { assigned_role: before.assigned_role },
+          after: { assigned_role: after.assigned_role }
+        });
+      }
+
+      // Check for SLA changes
+      if (before.sla_hours !== after.sla_hours) {
+        changes.push({
+          action: `alterou SLA de ${before.sla_hours || 0} para ${after.sla_hours || 0} horas`,
+          before: { sla_hours: before.sla_hours },
+          after: { sla_hours: after.sla_hours }
+        });
+      }
+
       // Check for due date changes
       if (before.due_at !== after.due_at) {
         changes.push({

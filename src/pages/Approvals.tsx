@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TaskDrawer } from '@/components/workflows/TaskDrawer';
 import { ApprovalDecisionDialog } from '@/components/workflows/ApprovalDecisionDialog';
 import { tasksRepo } from '@/data/mc';
+import { supabase } from '@/integrations/supabase/client';
 import type { Task } from '@/types/mc';
 import { format, isToday, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -42,54 +43,37 @@ export const Approvals = () => {
   const loadApprovalTasks = async () => {
     try {
       setLoading(true);
-      // Mock data - in real implementation, this would filter by type='approval'
-      const mockApprovalTasks: Task[] = [
-        {
-          id: 'approval-1',
-          workflow_instance_id: 'instance-1',
-          node_id: 'approval-node-1',
-          type: 'approval',
-          title: 'Aprovação de Design UI',
-          status: 'open',
-          priority: 5,
-          assigned_role: 'designer',
-          assignee_user_id: user?.id,
-          due_at: new Date().toISOString(),
-          sla_hours: 24,
-          fields: {
-            checklist: [
-              { id: '1', label: 'Design responsivo', required: true, done: true },
-              { id: '2', label: 'Acessibilidade verificada', required: true, done: false },
-              { id: '3', label: 'Aprovação do cliente', required: false, done: false }
-            ]
-          },
-          created_by: 'user-1',
-          created_at: '2024-01-15T09:00:00Z'
-        },
-        {
-          id: 'approval-2',
-          workflow_instance_id: 'instance-2',
-          node_id: 'approval-node-2',
-          type: 'approval',
-          title: 'Revisão de Código Backend',
-          status: 'in_progress',
-          priority: 4,
-          assigned_role: 'tech-lead',
-          assignee_user_id: 'other-user',
-          due_at: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-          sla_hours: 48,
-          fields: {},
-          created_by: 'user-2',
-          created_at: '2024-01-14T14:30:00Z'
-        }
-      ];
-      
-      setTasks(mockApprovalTasks);
+      // Get all tasks from all instances and filter by type='approval'
+      const { data: instances, error: instancesError } = await (supabase as any)
+        .schema('mc')
+        .from('workflow_instances')
+        .select('id');
+
+      if (instancesError) throw instancesError;
+
+      if (!instances || instances.length === 0) {
+        setTasks([]);
+        return;
+      }
+
+      // Get all approval tasks from all instances
+      const { data: allTasks, error: tasksError } = await (supabase as any)
+        .schema('mc')
+        .from('tasks')
+        .select('*')
+        .eq('type', 'approval')
+        .in('workflow_instance_id', instances.map(i => i.id))
+        .order('created_at', { ascending: false });
+
+      if (tasksError) throw tasksError;
+
+      setTasks(allTasks || []);
     } catch (error) {
+      console.error('Erro ao carregar tarefas de aprovação:', error);
       toast({
-        title: 'Erro ao carregar aprovações',
-        description: 'Tente novamente ou contate o suporte',
-        variant: 'destructive'
+        title: 'Erro',
+        description: 'Não foi possível carregar as tarefas de aprovação.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -191,6 +175,11 @@ export const Approvals = () => {
 
   const openDecisionDialog = (task: Task) => {
     setDecisionTask(task);
+  };
+
+  const handleDecisionComplete = () => {
+    setDecisionTask(null);
+    loadApprovalTasks(); // Reload tasks after decision
   };
 
   const getStatusBadge = (status: string) => {
@@ -404,10 +393,7 @@ export const Approvals = () => {
           task={decisionTask}
           isOpen={!!decisionTask}
           onClose={() => setDecisionTask(null)}
-          onDecisionMade={() => {
-            setDecisionTask(null);
-            loadApprovalTasks();
-          }}
+          onComplete={handleDecisionComplete}
         />
       )}
     </div>

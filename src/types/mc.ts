@@ -133,8 +133,10 @@ export interface UpdateTaskInput {
   status?: 'open' | 'in_progress' | 'blocked' | 'done' | 'rejected';
   priority?: number;
   assignee_user_id?: string;
+  assigned_role?: string;
   due_at?: string;
   started_at?: string;
   completed_at?: string;
+  sla_hours?: number;
   fields?: Record<string, any>;
 }
