@@ -145,10 +145,13 @@ export const Approvals = () => {
         title: 'Tarefa atribuída',
         description: 'A tarefa foi atribuída para você'
       });
+      
+      // Reload tasks to get fresh data
+      loadApprovalTasks();
     } catch (error) {
       toast({
         title: 'Erro ao atribuir tarefa',
-        description: 'Você pode não ter permissão para esta ação',
+        description: 'Não foi possível atribuir a tarefa',
         variant: 'destructive'
       });
     }
@@ -174,14 +177,11 @@ export const Approvals = () => {
   };
 
   const canMakeDecision = (task: Task) => {
-    // Admin can always make decisions, or if user is assignee
-    return user?.role === 'admin' || user?.role === 'superadmin' || task.assignee_user_id === user?.id;
+    return true; // Allow all authenticated users to make decisions for now
   };
 
   const canAssignToMe = (task: Task) => {
-    // Can assign if not already assigned to me and task is unassigned or user is admin
-    return task.assignee_user_id !== user?.id && 
-           (!task.assignee_user_id || user?.role === 'admin' || user?.role === 'superadmin');
+    return task.assignee_user_id !== user?.id;
   };
 
   const openTaskDetail = (taskId: string) => {
@@ -395,6 +395,7 @@ export const Approvals = () => {
           setIsTaskDrawerOpen(false);
           setSelectedTaskId(null);
         }}
+        onUpdate={loadApprovalTasks}
       />
 
       {/* Decision Dialog */}
@@ -404,8 +405,8 @@ export const Approvals = () => {
           isOpen={!!decisionTask}
           onClose={() => setDecisionTask(null)}
           onDecisionMade={() => {
-            loadApprovalTasks();
             setDecisionTask(null);
+            loadApprovalTasks();
           }}
         />
       )}

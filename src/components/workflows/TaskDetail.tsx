@@ -83,8 +83,6 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
 
   const canComment = () => {
     if (!user || !profile) return false;
-    // For now, allow all authenticated users to comment
-    // TODO: Check if user is participant of the instance
     return true;
   };
 
@@ -205,6 +203,8 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
         description: 'O título da tarefa foi atualizado com sucesso.',
       });
       onUpdate?.();
+      // Reload task data to get fresh data
+      loadTaskData();
     } catch (error) {
       console.error('Erro ao salvar título:', error);
       toast({
@@ -687,18 +687,49 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
               <div>
                 <Label className="text-sm text-muted-foreground">Prioridade</Label>
                 {canEdit() ? (
-                  <Select value={task.priority.toString()} onValueChange={handlePriorityChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 - Muito Baixa</SelectItem>
-                      <SelectItem value="2">2 - Baixa</SelectItem>
-                      <SelectItem value="3">3 - Média</SelectItem>
-                      <SelectItem value="4">4 - Alta</SelectItem>
-                      <SelectItem value="5">5 - Crítica</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={task.priority}
+                      onChange={(e) => handlePriorityChange(e.target.value)}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, 
+                          ${task.priority >= 1 ? '#dc2626' : '#e5e7eb'} 0%, 
+                          ${task.priority >= 1 ? '#dc2626' : '#e5e7eb'} 20%,
+                          ${task.priority >= 2 ? '#f97316' : '#e5e7eb'} 20%, 
+                          ${task.priority >= 2 ? '#f97316' : '#e5e7eb'} 40%,
+                          ${task.priority >= 3 ? '#eab308' : '#e5e7eb'} 40%, 
+                          ${task.priority >= 3 ? '#eab308' : '#e5e7eb'} 60%,
+                          ${task.priority >= 4 ? '#22c55e' : '#e5e7eb'} 60%, 
+                          ${task.priority >= 4 ? '#22c55e' : '#e5e7eb'} 80%,
+                          ${task.priority >= 5 ? '#059669' : '#e5e7eb'} 80%, 
+                          ${task.priority >= 5 ? '#059669' : '#e5e7eb'} 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                    </div>
+                    <div className="text-sm">
+                      {task.priority === 1 && (
+                        <span className="font-medium text-red-600">1 - Crítica</span>
+                      )}
+                      {task.priority === 2 && (
+                        <span className="font-medium text-orange-600">2 - Alta</span>
+                      )}
+                      {task.priority === 3 && (
+                        <span className="font-medium text-yellow-600">3 - Média</span>
+                      )}
+                      {task.priority === 4 && (
+                        <span className="font-medium text-green-600">4 - Baixa</span>
+                      )}
+                      {task.priority === 5 && (
+                        <span className="font-medium text-green-800">5 - Planejada</span>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <p className="font-medium">P{task.priority}</p>
                 )}
@@ -781,7 +812,7 @@ export const TaskDetail = ({ taskId: propTaskId, isDrawer = false, onClose, onUp
               </Button>
             )}
             
-            {canEdit() && (
+            {(userRole === 'admin' || userRole === 'superadmin') && (
               <Button onClick={handleAutoAssign} disabled={saving} className="w-full" variant="outline">
                 <User className="h-4 w-4 mr-2" />
                 Alterar atribuição
