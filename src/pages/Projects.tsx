@@ -57,6 +57,11 @@ export const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Helper function needs to be declared before being used
+  const getProjectName = (instance: WorkflowInstance) => {
+    return instance.variables?.project_name || `Projeto ${instance.id.slice(0, 8)}`;
+  };
+
   useEffect(() => {
     loadInstances();
   }, []);
@@ -99,9 +104,6 @@ export const Projects = () => {
     }
   };
 
-  const getProjectName = (instance: WorkflowInstance) => {
-    return instance.variables?.project_name || `Projeto ${instance.id.slice(0, 8)}`;
-  };
 
   const handleProjectClick = (instanceId: string) => {
     navigate(`/app/workflows/instances/${instanceId}/board`);
