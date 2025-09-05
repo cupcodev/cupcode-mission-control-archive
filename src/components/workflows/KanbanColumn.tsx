@@ -47,10 +47,11 @@ export const KanbanColumn = ({
           strategy={verticalListSortingStrategy}
         >
           {tasks.map(task => (
-            <div key={task.id} onClick={() => onTaskClick?.(task.id)} className="cursor-pointer">
+            <div key={task.id} className="cursor-pointer">
               <TaskCard 
                 task={task}
                 canMove={canMoveTask ? canMoveTask(task) : true}
+                onClick={() => onTaskClick?.(task.id)}
               />
             </div>
           ))}
