@@ -203,13 +203,13 @@ export const EventCreateDialog = ({ open, onOpenChange, onEventCreated }: EventC
           </div>
 
           <div>
-            <Label htmlFor="instance">Projeto *</Label>
+            <Label htmlFor="instance">Projeto (opcional)</Label>
             <Select 
               value={formData.instanceId} 
               onValueChange={(value) => setFormData({ ...formData, instanceId: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione um projeto" />
+                <SelectValue placeholder="Selecione um projeto (opcional)" />
               </SelectTrigger>
               <SelectContent>
                 {instances.map((instance) => (

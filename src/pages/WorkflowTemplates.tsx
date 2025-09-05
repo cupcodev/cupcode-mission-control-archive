@@ -240,14 +240,13 @@ export const WorkflowTemplates = () => {
           </CardContent>
         </Card>
 
-        {/* Preview Dialog */}
         {previewTemplate && (
           <Dialog open={showPreview} onOpenChange={setShowPreview}>
             <DialogContent className="sm:max-w-[700px]">
               <DialogHeader>
                 <DialogTitle>Detalhes do Template</DialogTitle>
               </DialogHeader>
-              <TemplatePreview spec={previewTemplate.spec} />
+              <TemplatePreview spec={JSON.stringify(previewTemplate.spec)} />
             </DialogContent>
           </Dialog>
         )}
