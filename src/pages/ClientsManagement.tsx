@@ -12,6 +12,7 @@ import { ClientCreateDialog } from '@/components/workflows/ClientCreateDialog';
 export const ClientsManagement = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [servicesByClient, setServicesByClient] = useState<Record<string, any[]>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [clientDialogOpen, setClientDialogOpen] = useState(false);
@@ -31,6 +32,20 @@ export const ClientsManagement = () => {
       
       setClients(clientsData);
       setServices(servicesData);
+
+      // Load contracted services per client (removes mock data)
+      const map: Record<string, any[]> = {};
+      await Promise.all(
+        (clientsData || []).map(async (c: any) => {
+          try {
+            const list = await clientServicesRepo.listByClient(c.id);
+            map[c.id] = list;
+          } catch (e) {
+            map[c.id] = [];
+          }
+        })
+      );
+      setServicesByClient(map);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       toast({
@@ -119,7 +134,7 @@ export const ClientsManagement = () => {
                 <div className="flex items-center space-x-2">
                   <Briefcase className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {services.filter(s => ['DEV_FE', 'TRAFFIC'].includes(s.code)).length} serviços
+                    {(servicesByClient[client.id]?.length ?? 0)} serviços
                   </span>
                 </div>
               </div>
@@ -127,13 +142,11 @@ export const ClientsManagement = () => {
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Serviços Contratados</Label>
                 <div className="flex flex-wrap gap-1">
-                  {services
-                    .filter(s => ['DEV_FE', 'TRAFFIC'].includes(s.code))
-                    .map((service) => (
-                      <Badge key={service.id} variant="outline" className="text-xs">
-                        {service.name}
-                      </Badge>
-                    ))}
+                  {(servicesByClient[client.id] ?? []).map((service) => (
+                    <Badge key={service.id} variant="outline" className="text-xs">
+                      {service.service_name}
+                    </Badge>
+                  ))}
                 </div>
               </div>
 

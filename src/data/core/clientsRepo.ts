@@ -60,13 +60,20 @@ class ClientsRepository {
 
   async create(input: CreateClientInput): Promise<Client> {
     try {
+      // Ensure we set created_by to satisfy NOT NULL and RLS policies
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      const user = userData?.user;
+      if (!user) throw new Error('Usuário não autenticado');
+
       const { data, error } = await (supabase as any)
         .schema('core')
         .from('clients')
         .insert({
           ...input,
           status: input.status || 'active',
-          metadata: input.metadata || {}
+          metadata: input.metadata || {},
+          created_by: user.id,
         })
         .select()
         .single();
